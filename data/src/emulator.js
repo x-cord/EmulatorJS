@@ -16,6 +16,46 @@ import { defaultScalingShader } from "./scaling.js";
 
 import "./vendor/socket.io.min.js";
 
+// Cores built against the newer RetroArch frontend use the RWebAudio backend
+// (a plain AudioContext with no reachable per-source gain) instead of OpenAL.
+// `setVolume()` only adjusts OpenAL source gains, so on those cores the volume
+// slider did nothing. Route every AudioContext's output through a master
+// GainNode that we can control.
+const audioVolume = { volume: 1, contexts: [] };
+
+function installAudioVolumeSupport() {
+    if (typeof window === "undefined" || window.__ejsAudioVolumeInstalled) return;
+    const NativeAudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!NativeAudioContext || typeof BaseAudioContext === "undefined") return;
+    window.__ejsAudioVolumeInstalled = true;
+
+    const destDescriptor = Object.getOwnPropertyDescriptor(BaseAudioContext.prototype, "destination");
+    if (!destDescriptor || !destDescriptor.get) return;
+
+    class EJS_AudioContext extends NativeAudioContext {
+        constructor(...args) {
+            super(...args);
+            try {
+                const realDestination = destDescriptor.get.call(this);
+                const gain = this.createGain();
+                gain.gain.value = audioVolume.volume;
+                gain.connect(realDestination);
+                // Redirect `ctx.destination` to the master gain so the core's
+                // direct `source.connect(ctx.destination)` goes through it.
+                Object.defineProperty(this, "destination", { configurable: true, get: () => gain });
+                this.__ejsMasterGain = gain;
+                audioVolume.contexts.push(this);
+            } catch (e) {
+                // Fall back to the untouched context if anything goes wrong.
+            }
+        }
+    }
+    window.AudioContext = EJS_AudioContext;
+    if (window.webkitAudioContext) window.webkitAudioContext = EJS_AudioContext;
+}
+
+installAudioVolumeSupport();
+
 class EmulatorJS {
     getCores() {
         let rv = CONSTS.cores;
@@ -440,8 +480,24 @@ class EmulatorJS {
 
         const skipLocalAudio = this.isNetplay && this.netplay && this.netplay.setVolume(volume);
 
-        if (!skipLocalAudio && this.Module.AL && this.Module.AL.currentCtx && this.Module.AL.currentCtx.sources) {
-            this.Module.AL.currentCtx.sources.forEach(e => {
+        if (skipLocalAudio) return;
+
+        // Control volume through the master gain we install on every
+        // AudioContext. This works for both RWebAudio (newer cores, no
+        // per-source gain) and OpenAL cores (whose context gain connects to
+        // `destination`).
+        audioVolume.volume = volume;
+        for (const ctx of audioVolume.contexts) {
+            if (ctx.__ejsMasterGain) {
+                try { ctx.__ejsMasterGain.gain.value = volume; } catch (e) { /* ignore */ }
+            }
+        }
+
+        // Fallback for OpenAL contexts that aren't routed through a master gain
+        // (e.g. the patch didn't install): adjust the source gains directly.
+        const al = this.Module && this.Module.AL && this.Module.AL.currentCtx;
+        if (al && al.sources && (!al.audioCtx || !al.audioCtx.__ejsMasterGain)) {
+            al.sources.forEach(e => {
                 e.gain.gain.value = volume;
             })
         }
