@@ -8,6 +8,7 @@ import { EJS_SETUP } from "./setup.js";
 import { Netplay } from "./netplay.js";
 import { EJS_Frontend } from "./frontend.js";
 import * as CONSTS from "./consts.js";
+import { withCorePointerEvents } from "./pointer.js";
 
 import "./vendor/socket.io.min.js";
 
@@ -1106,7 +1107,7 @@ class EmulatorJS {
             if (this.debug) args.push("-v");
             args.push("/" + this.fileName);
             if (this.debug) console.log(args);
-            this.Module.callMain(args);
+            withCorePointerEvents(this.frontend.canvas, () => this.Module.callMain(args));
             if (typeof this.config.softLoad === "number" && this.config.softLoad > 0) {
                 this.resetTimeout = setTimeout(() => {
                     this.gameManager.restart();
@@ -1868,7 +1869,21 @@ class EmulatorJS {
             }
         }
     }
+    getControlBindings(player = 0) {
+        return (this.frontend?.controlButtons || []).map(({ id, label }) => ({
+            id,
+            label,
+            keyCode: Number(this.controls?.[player]?.[id]?.value) || 0,
+            gamepad: this.controls?.[player]?.[id]?.value2 || null
+        }));
+    }
     saveSettings() {
+        const bindings = this.getControlBindings();
+        const signature = JSON.stringify(bindings);
+        if (signature !== this.controlBindingSignature) {
+            this.controlBindingSignature = signature;
+            this.callEvent("controlsChanged", bindings);
+        }
         if (!window.localStorage || this.config.disableLocalStorage || !this.settingsLoaded) return;
         if (!this.started && !this.failedToStart) return;
         const coreSpecific = {

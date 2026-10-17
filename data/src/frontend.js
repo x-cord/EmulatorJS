@@ -1669,6 +1669,13 @@ class EJS_Frontend {
                 { id: 11, label: this.localization("R") },
                 { id: 14, label: this.localization("Microphone") },
             ];
+            if (this.ejs.getCore() === "melonds") {
+                buttons[buttons.length - 1] = { id: 12, label: this.localization("Microphone") };
+                buttons.push(
+                    { id: 13, label: this.localization("Swap screens") },
+                    { id: 14, label: this.localization("Close lid") }
+                );
+            }
         } else if ("vb" === this.ejs.getControlScheme()) {
             buttons = [
                 { id: 8, label: this.localization("A") },
@@ -1831,6 +1838,7 @@ class EJS_Frontend {
                 { id: 8, label: this.localization("A") },
                 { id: 0, label: this.localization("B") },
                 { id: 3, label: this.localization("START") },
+                { id: 2, label: this.localization("Rotate") },
                 { id: 4, label: this.localization("X UP") },
                 { id: 5, label: this.localization("X DOWN") },
                 { id: 6, label: this.localization("X LEFT") },
@@ -1970,6 +1978,7 @@ class EJS_Frontend {
             { id: 29, label: this.localization("SLOW MOTION") },
             { id: 28, label: this.localization("REWIND") }
         );
+        this.controlButtons = buttons;
         let nums = [];
         for (let i = 0; i < buttons.length; i++) {
             nums.push(buttons[i].id);
