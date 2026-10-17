@@ -1837,6 +1837,8 @@ class EJS_Frontend {
             buttons = [
                 { id: 8, label: this.localization("A") },
                 { id: 0, label: this.localization("B") },
+                { id: 1, label: "X1" },
+                { id: 9, label: "X2" },
                 { id: 3, label: this.localization("START") },
                 { id: 2, label: this.localization("Rotate") },
                 { id: 4, label: this.localization("X UP") },
