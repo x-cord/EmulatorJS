@@ -1858,6 +1858,8 @@
 
 /* Beena's screen and two-page Storyware layout. */
 .ejs_beena > .ejs_canvas_parent {
+    cursor: none;
+    touch-action: none;
     position: relative;
     z-index: 0;
     width: var(--ejs-beena-width);
@@ -1877,31 +1879,54 @@
     min-height: 0;
     display: grid;
     place-items: center;
+    align-items: start;
 }
 .ejs_beena_spread {
     display: flex;
     position: relative;
     touch-action: none;
-    cursor: crosshair;
-    box-shadow: 0 5px 12px #0009;
+    cursor: none;
+}
+.ejs_beena_spread::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: calc(-.5 * var(--ejs-beena-outer-padding, 0%));
+    right: calc(-.5 * var(--ejs-beena-outer-padding, 0%));
+    bottom: calc(-1 * var(--ejs-beena-bottom-padding, 0%));
 }
 .ejs_beena_page {
     position: relative;
     width: 50%;
     height: 100%;
-    background: #ebe5d8;
-    overflow: hidden;
+    overflow: visible;
 }
+.ejs_beena_page::before,
 .ejs_beena_page img {
-    width: 100%;
-    height: 100%;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(100% + var(--ejs-beena-outer-padding, 0%));
+    max-width: none;
+    height: calc(100% + var(--ejs-beena-bottom-padding, 0%));
     object-fit: fill;
     pointer-events: none;
+}
+.ejs_beena_page::before {
+    content: "";
+    background: #ebe5d8;
+    box-shadow: 0 5px 12px #0006;
+}
+.ejs_beena_left::before,
+.ejs_beena_left img {
+    left: calc(-1 * var(--ejs-beena-outer-padding, 0%));
 }
 .ejs_beena_page::after {
     content: "";
     position: absolute;
     inset: 0;
+    bottom: calc(-1 * var(--ejs-beena-bottom-padding, 0%));
     pointer-events: none;
 }
 .ejs_beena_left::after {
@@ -1942,14 +1967,19 @@
     background: #55472f;
     outline: 2px solid #d99d2a;
 }
-.ejs_beena_controls button[aria-pressed="true"] {
-    border-color: #d99d2a;
-    color: #ffc65b;
-}
 .ejs_beena_status {
     margin: 0;
     font-size: 11px;
     line-height: 1.2;
     text-align: center;
     color: #d3c7b3;
+}
+
+.ejs_beena .ejs_canvas {
+    cursor: none !important;
+    touch-action: none;
+}
+.ejs_beena_screen_pen {
+    height: 6.666667%;
+    z-index: 2;
 }

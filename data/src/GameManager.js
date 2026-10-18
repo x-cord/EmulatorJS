@@ -410,10 +410,10 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
         if (typeof this.Module._beena_get_book_state !== "function") return null;
         const value = this.Module._beena_get_book_state();
         if (value < 0) return null;
-        return { page: value & 15, target: (value >> 4) & 1, contact: !!(value & 32), x: (value >> 8) & 255, y: (value >> 16) & 255 };
+        return { positions: ((value >> 24) & 15) || 7, page: value & 15, target: (value >> 4) & 1, contact: !!(value & 32), x: (value >> 8) & 255, y: (value >> 16) & 255 };
     }
     setBeenaBookPage(page) {
-        if (Number.isInteger(page) && page >= 0 && page < 7 && this.getBeenaBookState())
+        if (Number.isInteger(page) && page >= 0 && page < (this.getBeenaBookState()?.positions || 0))
             this.Module._beena_set_book_page(page);
     }
     setBeenaBookPen(x, y, contact, target = -1) {
