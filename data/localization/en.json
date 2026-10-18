@@ -336,5 +336,15 @@
     "Menu Bar Button": "Menu Bar Button",
     "visible": "visible",
     "hidden": "hidden",
-    "Autofire": "Autofire"
+    "Autofire": "Autofire",
+    "Storybook": "Storybook",
+    "Previous spread": "Previous spread",
+    "Next spread": "Next spread",
+    "Book position": "Book position",
+    "Switch pen target": "Switch pen target",
+    "Loading book scans…": "Loading book scans…",
+    "Book scans could not be loaded": "Book scans could not be loaded",
+    "Page": "Page",
+    "Pages": "Pages",
+    "Book closed": "Book closed"
 }

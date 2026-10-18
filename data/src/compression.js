@@ -178,10 +178,13 @@ class EJS_COMPRESSION {
      * // t: 2 - File extracted (file, size, data)
      * // t: 1 - Extraction complete
      */
-    decompressFile(method, data, updateMsg, fileCbFunc) {
-        return new Promise(async callback => {
-            const file = await this.getWorkerFile(method);
-            const worker = new Worker(URL.createObjectURL(file));
+    async decompressFile(method, data, updateMsg, fileCbFunc) {
+        const file = await this.getWorkerFile(method);
+        return new Promise((callback, reject) => {
+            const url = URL.createObjectURL(file);
+            const worker = new Worker(url);
+            const cleanup = () => { worker.terminate(); URL.revokeObjectURL(url); };
+            worker.onerror = error => { cleanup(); reject(new Error(error.message || "Archive extraction failed")); };
             const files = {};
             worker.onmessage = (data) => {
                 if (!data.data) return;
@@ -202,6 +205,7 @@ class EJS_COMPRESSION {
                     }
                 }
                 if (data.data.t === 1) {
+                    cleanup();
                     callback(files);
                 }
             }

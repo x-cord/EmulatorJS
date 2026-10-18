@@ -336,5 +336,15 @@
     "Menu Bar Button": "Bouton de la barre de menu",
     "visible": "visible",
     "hidden": "masqué",
-    "Autofire": "Autofire"
+    "Autofire": "Autofire",
+    "Storybook": "Livre",
+    "Previous spread": "Double page précédente",
+    "Next spread": "Double page suivante",
+    "Book position": "Position du livre",
+    "Switch pen target": "Changer la cible du stylet",
+    "Loading book scans…": "Chargement des pages…",
+    "Book scans could not be loaded": "Impossible de charger les pages du livre",
+    "Page": "Page",
+    "Pages": "Pages",
+    "Book closed": "Livre fermé"
 }

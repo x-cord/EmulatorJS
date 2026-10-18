@@ -9,6 +9,7 @@ import { Netplay } from "./netplay.js";
 import { EJS_Frontend } from "./frontend.js";
 import * as CONSTS from "./consts.js";
 import { withCorePointerEvents } from "./pointer.js";
+import { BeenaBook } from "./beena-book.js";
 
 import "./vendor/socket.io.min.js";
 
@@ -1158,6 +1159,8 @@ class EmulatorJS {
             this.callEvent("exit");
             return;
         }
+        if (this.getCore() === "mame2003_plus" && this.gameManager.getBeenaBookState())
+            this.beenaBook = new BeenaBook(this);
         this.callEvent("start");
 
         // "Direct Keyboard Input" is a per-core default; apply it (and focus

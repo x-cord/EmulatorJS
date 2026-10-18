@@ -298,5 +298,15 @@
     "DPAD_DOWN": "十字キー下",
     "DPAD_LEFT": "十字キー左",
     "DPAD_RIGHT": "十字キー右",
-    "Autofire": "Autofire"
+    "Autofire": "Autofire",
+    "Storybook": "絵本",
+    "Previous spread": "前の見開き",
+    "Next spread": "次の見開き",
+    "Book position": "絵本の位置",
+    "Switch pen target": "ペンの操作先を切り替え",
+    "Loading book scans…": "絵本のページを読み込み中…",
+    "Book scans could not be loaded": "絵本のページを読み込めませんでした",
+    "Page": "ページ",
+    "Pages": "ページ",
+    "Book closed": "絵本を閉じる"
 }

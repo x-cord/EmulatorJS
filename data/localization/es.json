@@ -307,5 +307,15 @@
     "DPAD_DOWN": "DPAD_ABAJO",
     "DPAD_LEFT": "DPAD_IZQUIERDA",
     "DPAD_RIGHT": "DPAD_DERECHO",
-    "Autofire": "Autofire"
+    "Autofire": "Autofire",
+    "Storybook": "Libro",
+    "Previous spread": "Doble página anterior",
+    "Next spread": "Doble página siguiente",
+    "Book position": "Posición del libro",
+    "Switch pen target": "Cambiar destino del lápiz",
+    "Loading book scans…": "Cargando las páginas…",
+    "Book scans could not be loaded": "No se pudieron cargar las páginas del libro",
+    "Page": "Página",
+    "Pages": "Páginas",
+    "Book closed": "Libro cerrado"
 }

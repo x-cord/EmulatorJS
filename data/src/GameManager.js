@@ -406,6 +406,20 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
         }
         this.functions.simulateInput(player, index, value);
     }
+    getBeenaBookState() {
+        if (typeof this.Module._beena_get_book_state !== "function") return null;
+        const value = this.Module._beena_get_book_state();
+        if (value < 0) return null;
+        return { page: value & 15, target: (value >> 4) & 1, contact: !!(value & 32), x: (value >> 8) & 255, y: (value >> 16) & 255 };
+    }
+    setBeenaBookPage(page) {
+        if (Number.isInteger(page) && page >= 0 && page < 7 && this.getBeenaBookState())
+            this.Module._beena_set_book_page(page);
+    }
+    setBeenaBookPen(x, y, contact, target = -1) {
+        if (this.getBeenaBookState())
+            this.Module._beena_set_book_pen(Math.round(x), Math.round(y), contact ? 1 : 0, target);
+    }
     getFileNames() {
         if (this.EJS.getCore() === "picodrive") {
             return ["bin", "gen", "smd", "md", "32x", "cue", "iso", "sms", "68k", "chd"];

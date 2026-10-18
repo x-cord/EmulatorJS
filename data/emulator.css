@@ -1855,3 +1855,101 @@
     display: flex;
     align-items: center;
 }
+
+/* Beena's screen and two-page Storyware layout. */
+.ejs_beena > .ejs_canvas_parent {
+    position: relative;
+    z-index: 0;
+    width: var(--ejs-beena-width);
+    height: var(--ejs-beena-tv-height);
+    margin: 0 auto;
+}
+.ejs_beena_book {
+    padding: 0 0 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #211e19;
+    border-top: 1px solid #51483b;
+}
+.ejs_beena_stage {
+    flex: none;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+}
+.ejs_beena_spread {
+    display: flex;
+    position: relative;
+    touch-action: none;
+    cursor: crosshair;
+    box-shadow: 0 5px 12px #0009;
+}
+.ejs_beena_page {
+    position: relative;
+    width: 50%;
+    height: 100%;
+    background: #ebe5d8;
+    overflow: hidden;
+}
+.ejs_beena_page img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    pointer-events: none;
+}
+.ejs_beena_page::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.ejs_beena_left::after {
+    background: linear-gradient(to left, #0005, transparent 7%);
+}
+.ejs_beena_right::after {
+    background: linear-gradient(to right, #0005, transparent 7%);
+}
+.ejs_beena_pen {
+    position: absolute;
+    width: 5%;
+    height: 7.142857%;
+    transform: translate(-50%, -50%);
+    opacity: .7;
+    pointer-events: none;
+}
+.ejs_beena_pen[hidden], .ejs_beena_page img[hidden] {
+    display: none;
+}
+.ejs_beena_controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+}
+.ejs_beena_controls button, .ejs_beena_controls select {
+    background: #373128;
+    color: #f6efdf;
+    border: 1px solid #625643;
+    border-radius: 0;
+    padding: 5px 9px;
+    font-size: 12px;
+    cursor: pointer;
+    min-height: 32px;
+}
+.ejs_beena_controls button:hover, .ejs_beena_controls button:focus-visible,
+.ejs_beena_controls select:focus-visible {
+    background: #55472f;
+    outline: 2px solid #d99d2a;
+}
+.ejs_beena_controls button[aria-pressed="true"] {
+    border-color: #d99d2a;
+    color: #ffc65b;
+}
+.ejs_beena_status {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: center;
+    color: #d3c7b3;
+}
