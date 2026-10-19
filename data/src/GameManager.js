@@ -1,3 +1,4 @@
+import { defaultScalingShader } from "./scaling.js";
 import { NativeSave } from "./native-save.js";
 
 class EJS_GameManager {
@@ -171,6 +172,8 @@ class EJS_GameManager {
             "video_top_portrait_viewport = true\n" +
             "video_vsync = true\n" +
             "video_smooth = false\n" +
+            "video_shader_enable = true\n" +
+            'video_shader = "/shader/shader.glslp"\n' +
             "fastforward_ratio = 3.0\n" +
             "slowmotion_ratio = 3.0\n" +
             (this.EJS.rewindEnabled ? "rewind_enable = true\n" : "") +
@@ -207,8 +210,12 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
         return filename;
     }
     initShaders() {
-        if (!this.EJS.shaders) return;
         this.mkdir("/shader");
+        this.FS.writeFile("/shader/shader.glslp", defaultScalingShader.shader.value);
+        for (const resource of defaultScalingShader.resources) {
+            this.FS.writeFile(`/shader/${resource.name}`, resource.value);
+        }
+        if (!this.EJS.shaders) return;
         for (const shaderFileName in this.EJS.shaders) {
             const shader = this.EJS.shaders[shaderFileName];
             if (typeof shader === "string") {

@@ -12,6 +12,7 @@ import { withCorePointerEvents } from "./pointer.js";
 import { BeenaBook } from "./beena-book.js";
 import { SuperTVPCPrinter } from "./super-tvpc-printer.js";
 import { EkaraMicrophone } from "./ekara-microphone.js";
+import { defaultScalingShader } from "./scaling.js";
 
 import "./vendor/socket.io.min.js";
 
@@ -2131,12 +2132,8 @@ class EmulatorJS {
             this.Module.FS.unlink("/shader/shader.glslp");
         } catch(e) {}
 
-        if (name === "disabled" || !this.shaders[name]) {
-            this.gameManager.toggleShader(0);
-            return;
-        }
-
-        const shaderConfig = this.shaders[name];
+        const shaderConfig = name === "disabled" || !this.shaders[name]
+            ? defaultScalingShader : this.shaders[name];
 
         if (typeof shaderConfig === "string") {
             this.Module.FS.writeFile("/shader/shader.glslp", shaderConfig, {}, "w+");
