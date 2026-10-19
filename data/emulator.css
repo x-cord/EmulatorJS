@@ -1987,6 +1987,33 @@
     background: #55472f;
     outline: 2px solid #d99d2a;
 }
+.ejs_beena_position {
+    position: relative;
+    z-index: 1100;
+}
+.ejs_beena_positions {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+    background: #373128;
+    border: 1px solid #625643;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px #0008;
+}
+.ejs_beena_positions[hidden] {
+    display: none;
+}
+.ejs_beena_positions button {
+    flex: none;
+    width: 100%;
+    border: 0;
+    text-align: left;
+    white-space: nowrap;
+}
+.ejs_beena_positions button[aria-selected="true"] {
+    background: #55472f;
+}
 .ejs_beena_status {
     margin: 0;
     font-size: 11px;

@@ -133,7 +133,7 @@ class EJS_Frontend {
         this.handleResize();
     }
     showVirtualGamepad() {
-        this.virtualGamepad.style.display = "";
+        this.toggleVirtualGamepad(true);
     }
     requestFullscreen() {
         if (this.elements.parent.requestFullscreen) {
@@ -922,13 +922,18 @@ class EJS_Frontend {
         }
 
         this.createBottomMenuBarListeners = () => {
+            const usesTouchMenu = (e) => this.ejs.isMobile || this.ejs.touch ||
+                e.pointerType === "touch" || e.sourceCapabilities?.firesTouchEvents ||
+                (this.ejs.hasTouchScreen && matchMedia("(pointer: coarse)").matches) ||
+                this.virtualGamepad?.contains(e.target);
             const clickListener = (e) => {
-                if (e.pointerType === "touch") return;
+                if (usesTouchMenu(e)) return;
                 if (!this.ejs.started || ignoreEvents || document.pointerLockElement === this.canvas) return;
                 if (this.isPopupOpen()) return;
                 show();
             }
             const mouseListener = (e) => {
+                if (usesTouchMenu(e)) return;
                 if (!this.ejs.started || ignoreEvents || document.pointerLockElement === this.canvas) return;
                 if (this.isPopupOpen()) return;
                 const deltaX = e.movementX;
@@ -955,7 +960,7 @@ class EJS_Frontend {
                 this.menu.mousemoveListener = this.ejs.addEventListener(this.elements.parent, "mousemove", clickListener);
             }
 
-            this.ejs.addEventListener(this.elements.parent, "click", clickListener);
+            this.menu.clickListener = this.ejs.addEventListener(this.elements.parent, "click", clickListener);
         }
         this.createBottomMenuBarListeners();
 
@@ -1435,7 +1440,7 @@ class EJS_Frontend {
 
             this.elements.menu.style.opacity = "";
             this.elements.menu.style.background = "transparent";
-            this.virtualGamepad.style.display = "none";
+            this.toggleVirtualGamepad(false);
             settingButton[0].classList.add("shadow");
             this.menu.open(true);
         }
@@ -2374,6 +2379,8 @@ class EJS_Frontend {
     setVirtualGamepad() {
         this.virtualGamepad = this.ejs.createElement("div");
         this.toggleVirtualGamepad = (show) => {
+            clearTimeout(this.virtualGamepadResizeTimeout);
+            this.virtualGamepad.style.opacity = "";
             this.virtualGamepad.style.display = show ? "" : "none";
         }
         this.virtualGamepad.classList.add("ejs_virtualGamepad_parent");
@@ -2404,8 +2411,13 @@ class EJS_Frontend {
                         if (!set[i].location) {
                             console.warn("Missing location value for " + set[i].type + "! Using default gamepad settings");
                             return false;
-                        } else if (!set[i].inputValues) {
+                        } else if (!set[i].inputValues && !set[i].keyValues) {
                             console.warn("Missing inputValues for " + set[i].type + "! Using default gamepad settings");
+                            return false;
+                        } else if (set[i].type === "dpad" && set[i].keyValues &&
+                            (!Array.isArray(set[i].keyValues) || set[i].keyValues.length !== 4 ||
+                             set[i].keyValues.some((key) => typeof key !== "string"))) {
+                            console.warn("D-pad keyValues must contain up, down, left, and right keys");
                             return false;
                         }
                         continue;
@@ -2725,13 +2737,13 @@ class EJS_Frontend {
                 }
             }
             let style = "";
-            if (info[i].left) {
+            if (info[i].left !== undefined) {
                 style += "left:" + info[i].left + (typeof info[i].left === "number" ? "px" : "") + ";";
             }
-            if (info[i].right) {
+            if (info[i].right !== undefined) {
                 style += "right:" + info[i].right + (typeof info[i].right === "number" ? "px" : "") + ";";
             }
-            if (info[i].top) {
+            if (info[i].top !== undefined) {
                 style += "top:" + info[i].top + (typeof info[i].top === "number" ? "px" : "") + ";";
             }
             if (!info[i].bold) {
@@ -2758,15 +2770,20 @@ class EJS_Frontend {
                 // input, so on-screen controls work for keyboard-driven cores.
                 const key = info[i].key;
                 if (key) {
-                    this.ejs.addEventListener(button, "touchstart touchend touchcancel", (e) => {
+                    let keyIsDown = false;
+                    const pressEvents = window.PointerEvent
+                        ? "pointerdown pointerup pointercancel"
+                        : "touchstart touchend touchcancel";
+                    this.ejs.addEventListener(button, pressEvents, (e) => {
                         e.preventDefault();
-                        if (e.type === "touchend" || e.type === "touchcancel") {
-                            e.target.classList.remove("ejs_virtualGamepad_button_down");
-                            window.setTimeout(() => this.ejs.dispatchKeyEvent(key, false), 0);
-                        } else {
-                            e.target.classList.add("ejs_virtualGamepad_button_down");
-                            this.ejs.dispatchKeyEvent(key, true);
+                        const isDown = e.type === "pointerdown" || e.type === "touchstart";
+                        if (isDown === keyIsDown) return;
+                        keyIsDown = isDown;
+                        if (isDown && e.type === "pointerdown" && button.setPointerCapture) {
+                            try { button.setPointerCapture(e.pointerId); } catch (error) {}
                         }
+                        button.classList.toggle("ejs_virtualGamepad_button_down", isDown);
+                        this.ejs.dispatchKeyEvent(key, isDown);
                     });
                     continue;
                 }
@@ -2902,11 +2919,31 @@ class EJS_Frontend {
             if (dpad.id) {
                 elem.classList.add(`b_${dpad.id}`);
             }
+            // Keyboard-driven systems use the same native, merged EJS d-pad
+            // artwork and pressed-state feedback, sized inside their zone.
             elem.style = style;
+            if (dpad.keyValues) {
+                elem.style.position = "absolute";
+                elem.style.width = (dpad.width || 125) + "px";
+                elem.style.height = (dpad.height || 125) + "px";
+                if (typeof dpad.left === "number") elem.style.left = dpad.left + "px";
+                else if (dpad.left === undefined) elem.style.left = "0px";
+                if (typeof dpad.top === "number") elem.style.top = dpad.top + "px";
+                else if (dpad.top === undefined) elem.style.top = "0px";
+            }
             elems[dpad.location].appendChild(elem);
+            let keyState = [false, false, false, false];
             createDPad({
                 container: elem,
                 event: (up, down, left, right) => {
+                    if (dpad.keyValues) {
+                        [up, down, left, right].forEach((pressed, direction) => {
+                            if (!!pressed === keyState[direction]) return;
+                            keyState[direction] = !!pressed;
+                            this.ejs.dispatchKeyEvent(dpad.keyValues[direction], !!pressed);
+                        });
+                        return;
+                    }
                     if (dpad.joystickInput) {
                         if (up === 1) up = 0x7fff;
                         if (down === 1) down = 0x7fff;
@@ -3070,7 +3107,7 @@ class EJS_Frontend {
             this.elements.menuToggle = menuButton;
         }
 
-        this.virtualGamepad.style.display = "none";
+        this.toggleVirtualGamepad(false);
     }
     handleResize() {
         this.updateDockedMenu();
@@ -3078,7 +3115,7 @@ class EJS_Frontend {
             if (this.virtualGamepad.style.display === "none") {
                 this.virtualGamepad.style.opacity = 0;
                 this.virtualGamepad.style.display = "";
-                setTimeout(() => {
+                this.virtualGamepadResizeTimeout = setTimeout(() => {
                     this.virtualGamepad.style.display = "none";
                     this.virtualGamepad.style.opacity = "";
                 }, 250)

@@ -82,7 +82,9 @@ class EmulatorJS {
             return core;
         }
         const gen = this.getCore(true);
-        if (cores[gen] && cores[gen].includes(this.preGetSetting("retroarch_core"))) {
+        const allowCoreSelection = !Array.isArray(this.config.hideSettings) ||
+            !this.config.hideSettings.includes("retroarch_core");
+        if (allowCoreSelection && cores[gen] && cores[gen].includes(this.preGetSetting("retroarch_core"))) {
             return this.preGetSetting("retroarch_core");
         }
         if (cores[core]) {
@@ -1189,7 +1191,7 @@ class EmulatorJS {
             this.started = true;
             this.paused = false;
             this.frontend.setSaveFileButtonsVisible(this.gameManager.supportsNativeSave());
-            if (this.touch) {
+            if (this.touch && this.getSettingValue("virtual-gamepad") !== "disabled") {
                 this.frontend.showVirtualGamepad();
             } else if (this.defaultCoreOpts && this.defaultCoreOpts.supportsMouse) {
                 this.frontend.canvas.classList.remove("ejs-canvas-no-pointer");
