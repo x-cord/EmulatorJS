@@ -48,6 +48,21 @@ class EmulatorJS {
     createElement(type) {
         return document.createElement(type);
     }
+    // Simulate a keyboard event on the player's canvas, where the core's
+    // emscripten keyboard listener is attached. `code` is the DOM event code
+    // (e.g. "ArrowUp", "Enter"); the runtime translates it to a retro key.
+    dispatchKeyEvent(code, down) {
+        const element = this.frontend && this.frontend.canvas;
+        if (!element || typeof KeyboardEvent !== "function") return;
+        const event = new KeyboardEvent(down ? "keydown" : "keyup", {
+            code: code,
+            key: code,
+            bubbles: true,
+            cancelable: true,
+            composed: true
+        });
+        element.dispatchEvent(event);
+    }
     addEventListener(element, listener, callback) {
         const listeners = listener.split(" ");
         let rv = [];
@@ -1143,6 +1158,14 @@ class EmulatorJS {
             return;
         }
         this.callEvent("start");
+
+        // "Direct Keyboard Input" is a per-core default; apply it (and focus
+        // the player element) at start-up, not only when the settings menu is
+        // built, so keyboard-driven cores receive keys immediately.
+        if (this.defaultCoreOpts && this.defaultCoreOpts.useKeyboard === true && this.gameManager)
+            this.gameManager.setKeyboardEnabled(true);
+        if (this.frontend && this.frontend.elements && this.frontend.elements.parent && this.config.noAutoFocus !== true)
+            this.frontend.elements.parent.focus();
     }
     checkStarted() {
         (async () => {

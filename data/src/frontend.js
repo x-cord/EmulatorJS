@@ -264,8 +264,13 @@ class EJS_Frontend {
         this.createCheatsMenu();
         this.setVirtualGamepad();
         this.ejs.addEventListener(this.elements.parent, "keydown keyup", this.ejs.keyChange.bind(this.ejs));
-        this.ejs.addEventListener(this.elements.parent, "mousedown touchstart", (e) => {
-            if (document.activeElement !== this.elements.parent && this.ejs.config.noAutoFocus !== true) this.elements.parent.focus();
+        this.ejs.addEventListener(this.elements.parent, "pointerdown mousedown touchstart", (e) => {
+            if (this.ejs.config.noAutoFocus === true) return;
+            // Defer focus until after the browser's default mousedown action,
+            // which otherwise moves focus to <body> and would keep the
+            // emscripten keyboard listener (attached to the player element)
+            // from receiving key events.
+            setTimeout(() => this.elements.parent.focus(), 0);
         })
         this.ejs.addEventListener(window, "resize", this.handleResize.bind(this));
         this.ejs.addEventListener(window, "blur", () => this.ejs.stopAllAutofire());
@@ -2359,8 +2364,8 @@ class EJS_Frontend {
                     } else if (!set[i].id.toString()) {
                         console.warn("Missing id value for button " + set[i].text + "! Using default gamepad settings");
                         return false;
-                    } else if (!set[i].input_value.toString()) {
-                        console.warn("Missing input_value for button " + set[i].text + "! Using default gamepad settings");
+                    } else if (set[i].input_value === undefined && set[i].key === undefined) {
+                        console.warn("Missing input_value or key for button " + set[i].text + "! Using default gamepad settings");
                         return false;
                     }
                 } catch(e) {
@@ -2693,6 +2698,23 @@ class EJS_Frontend {
                     button.classList.add(`b_${info[i].id}`);
                 }
                 elems[info[i].location].appendChild(button);
+                // A button with a `key` drives the core's keyboard device (for
+                // cores that take direct keyboard input) instead of a RetroPad
+                // input, so on-screen controls work for keyboard-driven cores.
+                const key = info[i].key;
+                if (key) {
+                    this.ejs.addEventListener(button, "touchstart touchend touchcancel", (e) => {
+                        e.preventDefault();
+                        if (e.type === "touchend" || e.type === "touchcancel") {
+                            e.target.classList.remove("ejs_virtualGamepad_button_down");
+                            window.setTimeout(() => this.ejs.dispatchKeyEvent(key, false), 0);
+                        } else {
+                            e.target.classList.add("ejs_virtualGamepad_button_down");
+                            this.ejs.dispatchKeyEvent(key, true);
+                        }
+                    });
+                    continue;
+                }
                 const value = info[i].input_new_cores || info[i].input_value;
                 let downValue = info[i].joystickInput === true ? 0x7fff : 1;
                 this.ejs.addEventListener(button, "touchstart touchend touchcancel", (e) => {
