@@ -617,7 +617,7 @@ class EmulatorJS {
             for (let k in decompressedData) {
                 if (k.endsWith(".wasm")) {
                     wasm = decompressedData[k];
-                } else if (k.endsWith(".worker.js")) {
+                } else if (k.endsWith(".worker.js") || k.endsWith(".ww.js")) {
                     thread = decompressedData[k];
                 } else if (k.endsWith(".js")) {
                     js = decompressedData[k];
@@ -1140,7 +1140,7 @@ class EmulatorJS {
                 if (this.debug) console.log(fileName);
                 if (fileName.endsWith(".wasm")) {
                     return URL.createObjectURL(new Blob([wasmData], { type: "application/wasm" }));
-                } else if (fileName.endsWith(".worker.js")) {
+                } else if (fileName.endsWith(".worker.js") || fileName.endsWith(".ww.js")) {
                     return URL.createObjectURL(new Blob([threadData], { type: "application/javascript" }));
                 }
             },
@@ -1167,6 +1167,8 @@ class EmulatorJS {
             if (this.debug) args.push("-v");
             args.push("/" + this.fileName);
             if (this.debug) console.log(args);
+            // Native WebGL and event targets must exist in the document at startup.
+            this.frontend.game.appendChild(this.frontend.canvas);
             withCorePointerEvents(this.frontend.canvas, () => this.Module.callMain(args));
             if (typeof this.config.softLoad === "number" && this.config.softLoad > 0) {
                 this.resetTimeout = setTimeout(() => {

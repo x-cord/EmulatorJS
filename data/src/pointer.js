@@ -43,9 +43,7 @@ export function withCorePointerEvents(canvas, startCore) {
     canvas.removeEventListener = function(type, callback, options) {
         remove.call(canvas, type, callbacks.get(callback) || callback, options);
     };
-    try {
-        return startCore();
-    } finally {
-        canvas.addEventListener = add;
-    }
+    // Keep the wrapper installed after startup: threaded cores register their
+    // native listeners asynchronously on the browser thread.
+    return startCore();
 }

@@ -10,6 +10,7 @@ class EJS_Frontend {
         this.textElem = null;
         this.setElements(element);
         this.canvas = this.ejs.createElement("canvas");
+        this.canvas.id = "canvas";
         const getContext = this.canvas.getContext.bind(this.canvas);
         this.canvas.getContext = (type, attributes) => getContext(type,
             ["webgl", "webgl2", "experimental-webgl"].includes(type)
@@ -3590,7 +3591,7 @@ class EJS_Frontend {
             "hide": this.localization("hide")
         }, "hide", graphicsOptions, true);
 
-        addToMenu(this.localization("VSync"), "vsync", {
+        addToMenu(this.localization("Frame Pacing"), "vsync", {
             "enabled": this.localization("Enabled"),
             "disabled": this.localization("Disabled")
         }, "enabled", graphicsOptions, true);
