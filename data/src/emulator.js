@@ -11,6 +11,7 @@ import * as CONSTS from "./consts.js";
 import { withCorePointerEvents } from "./pointer.js";
 import { BeenaBook } from "./beena-book.js";
 import { SuperTVPCPrinter } from "./super-tvpc-printer.js";
+import { EkaraMicrophone } from "./ekara-microphone.js";
 
 import "./vendor/socket.io.min.js";
 
@@ -1164,6 +1165,9 @@ class EmulatorJS {
             this.beenaBook = new BeenaBook(this);
         if (this.getCore() === "mame2003_plus" && /(?:^|\/)stvpc_[^/]*\.zip$/i.test(this.fileName))
             this.tvpcPrinter = new SuperTVPCPrinter(this);
+        if (this.getCore() === "mame2003_plus" && /(?:^|\/)ekara_[^/]*\.zip$/i.test(this.fileName) &&
+            typeof this.Module._ekara_microphone_buffer === "function")
+            this.ekaraMicrophone = new EkaraMicrophone(this);
         this.callEvent("start");
 
         // "Direct Keyboard Input" is a per-core default; apply it (and focus

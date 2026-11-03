@@ -349,5 +349,12 @@
     "Book closed": "Livre fermé",
     "Print": "Impression",
     "Printed image": "Image imprimée",
-    "Save PNG": "Enregistrer le PNG"
+    "Save PNG": "Enregistrer le PNG",
+    "Microphone": "Microphone",
+    "Enable microphone": "Activer le microphone",
+    "Disable microphone": "Désactiver le microphone",
+    "Microphone input requires a secure connection and a browser with audio capture support.": "Le microphone nécessite une connexion sécurisée et un navigateur compatible avec la capture audio.",
+    "Microphone access was denied. Allow it in your browser and try again.": "L’accès au microphone a été refusé. Autorisez-le dans votre navigateur, puis réessayez.",
+    "Could not start the microphone. Check that an input device is available and try again.": "Impossible de démarrer le microphone. Vérifiez qu’un périphérique d’entrée est disponible, puis réessayez.",
+    "Input level": "Niveau d’entrée"
 }

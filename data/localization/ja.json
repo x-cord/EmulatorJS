@@ -311,5 +311,12 @@
     "Book closed": "絵本を閉じる",
     "Print": "印刷",
     "Printed image": "印刷画像",
-    "Save PNG": "PNGを保存"
+    "Save PNG": "PNGを保存",
+    "Microphone": "マイク",
+    "Enable microphone": "マイクを有効にする",
+    "Disable microphone": "マイクを無効にする",
+    "Microphone input requires a secure connection and a browser with audio capture support.": "マイク入力には安全な接続と音声入力に対応したブラウザーが必要です。",
+    "Microphone access was denied. Allow it in your browser and try again.": "マイクへのアクセスが拒否されました。ブラウザーで許可してから、もう一度お試しください。",
+    "Could not start the microphone. Check that an input device is available and try again.": "マイクを起動できませんでした。入力デバイスが利用可能か確認して、もう一度お試しください。",
+    "Input level": "入力レベル"
 }

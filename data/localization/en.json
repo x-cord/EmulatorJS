@@ -349,5 +349,12 @@
     "Book closed": "Book closed",
     "Print": "Print",
     "Printed image": "Printed image",
-    "Save PNG": "Save PNG"
+    "Save PNG": "Save PNG",
+    "Microphone": "Microphone",
+    "Enable microphone": "Enable microphone",
+    "Disable microphone": "Disable microphone",
+    "Microphone input requires a secure connection and a browser with audio capture support.": "Microphone input requires a secure connection and a browser with audio capture support.",
+    "Microphone access was denied. Allow it in your browser and try again.": "Microphone access was denied. Allow it in your browser and try again.",
+    "Could not start the microphone. Check that an input device is available and try again.": "Could not start the microphone. Check that an input device is available and try again.",
+    "Input level": "Input level"
 }
