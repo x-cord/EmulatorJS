@@ -226,6 +226,79 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
     getState() {
         return this.Module.EmulatorJSGetState();
     }
+    canSerialize() {
+        // MAME rejects state loads until its first emulated frame has completed.
+        if (this.EJS.getCore() === "mame2003_plus" && this.getFrameNum() < 2) return false;
+        try {
+            const info = this.functions.saveStateInfo();
+            if (!info) return false;
+            const parts = info.split("|");
+            if (parts[2] !== "1") return false;
+            try { if (this.Module._free) this.Module._free(parseInt(parts[1])); } catch(e) {}
+            return true;
+        } catch(e) {
+            return false;
+        }
+    }
+    getStateWorker() {
+        if (this._stateWorker !== undefined) return this._stateWorker;
+        try {
+            if (typeof Worker !== "function" || typeof Blob !== "function" || typeof URL === "undefined") {
+                this._stateWorker = null;
+                return null;
+            }
+            const code = "self.onmessage=function(e){var d=e.data;if(!d||d.type!=='copy')return;var v=new Uint8Array(d.sab,d.offset,d.size);var out=v.slice();self.postMessage({type:'state-copied',id:d.id,buffer:out.buffer},[out.buffer]);};";
+            this._stateWorker = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+        } catch (e) {
+            this._stateWorker = null;
+        }
+        return this._stateWorker;
+    }
+    // Like getState(), but the (potentially large) copy off the WASM heap is
+    // performed in a worker so the main thread only runs the core's serialization.
+    // Requires a shared heap (threaded cores); falls back to a main-thread copy.
+    async getStateAsync() {
+        const info = this.functions.saveStateInfo().split("|");
+        if (info[2] !== "1") {
+            console.error(info[0]);
+            throw new Error(info[0]);
+        }
+        const size = parseInt(info[0]);
+        const dataStart = parseInt(info[1]);
+        const heap = this.Module.HEAPU8;
+        const free = () => { try { if (this.Module._free) this.Module._free(dataStart); } catch(e) {} };
+        const buffer = heap.buffer;
+        if (typeof SharedArrayBuffer === "function" && buffer instanceof SharedArrayBuffer) {
+            const worker = this.getStateWorker();
+            if (worker) {
+                try {
+                    const bytes = await new Promise((resolve, reject) => {
+                        const id = Math.random().toString(36).slice(2);
+                        const onMessage = (e) => {
+                            const d = e.data;
+                            if (!d || d.type !== "state-copied" || d.id !== id) return;
+                            worker.removeEventListener("message", onMessage);
+                            resolve(new Uint8Array(d.buffer));
+                        };
+                        worker.addEventListener("message", onMessage);
+                        try {
+                            worker.postMessage({ type: "copy", id: id, sab: buffer, offset: dataStart, size: size });
+                        } catch (e) {
+                            worker.removeEventListener("message", onMessage);
+                            reject(e);
+                        }
+                    });
+                    free();
+                    return bytes;
+                } catch (e) {
+                    // fall through to the synchronous copy
+                }
+            }
+        }
+        const copy = new Uint8Array(heap.subarray(dataStart, dataStart + size));
+        free();
+        return copy;
+    }
     loadState(state) {
         try {
             this.FS.unlink("game.state");

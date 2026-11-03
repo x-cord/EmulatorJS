@@ -677,10 +677,44 @@ class EmulatorJS {
     }
     downloadStartState() {
         return new Promise((resolve, reject) => {
-            if (typeof this.config.loadState !== "string" && !this.toData(this.config.loadState, true)) {
+            // A host can supply the state bytes directly (e.g. from IndexedDB)
+            // through window.EJS_loadStateData, avoiding downloading from a URL.
+            const provider = (typeof window.EJS_loadStateData === "function") ? window.EJS_loadStateData : null;
+            if (!provider && typeof this.config.loadState !== "string" && !this.toData(this.config.loadState, true)) {
                 resolve();
                 return;
             }
+            const scheduleLoad = (state) => {
+                if (!state) {
+                    resolve();
+                    return;
+                }
+                const bytes = (state instanceof Uint8Array) ? state : new Uint8Array(state);
+                this.on("start", () => {
+                    // Loading a state before the core has finished initializing
+                    // is silently discarded (e.g. PPSSPP only creates its GPU
+                    // at the end of boot, so getState() throws until then).
+                    // Wait until the core can serialize its state, then load.
+                    const loadWhenReady = () => {
+                        const ready = (typeof this.gameManager.canSerialize === "function")
+                            ? this.gameManager.canSerialize()
+                            : (() => { try { this.gameManager.getState(); return true; } catch (e) { return false; } })();
+                        if (!ready) {
+                            setTimeout(loadWhenReady, 50);
+                            return;
+                        }
+                        this.gameManager.loadState(bytes);
+                    };
+                    loadWhenReady();
+                })
+                resolve();
+            };
+
+            if (provider) {
+                Promise.resolve(provider()).then(scheduleLoad).catch(() => resolve());
+                return;
+            }
+
             this.frontend.setLoadingText("Download Game State");
 
             this.downloadFile(this.config.loadState, this.downloadType.states.name, (progress) => {
@@ -690,12 +724,7 @@ class EmulatorJS {
                     this.startGameError("Error downloading game state");
                     return;
                 }
-                this.on("start", () => {
-                    setTimeout(() => {
-                        this.gameManager.loadState(new Uint8Array(res.data.files[0].bytes));
-                    }, 10);
-                })
-                resolve();
+                scheduleLoad(new Uint8Array(res.data.files[0].bytes));
             });
         })
     }
