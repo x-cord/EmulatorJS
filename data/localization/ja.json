@@ -308,5 +308,8 @@
     "Book scans could not be loaded": "絵本のページを読み込めませんでした",
     "Page": "ページ",
     "Pages": "ページ",
-    "Book closed": "絵本を閉じる"
+    "Book closed": "絵本を閉じる",
+    "Print": "印刷",
+    "Printed image": "印刷画像",
+    "Save PNG": "PNGを保存"
 }

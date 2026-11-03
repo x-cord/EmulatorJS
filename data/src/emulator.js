@@ -10,6 +10,7 @@ import { EJS_Frontend } from "./frontend.js";
 import * as CONSTS from "./consts.js";
 import { withCorePointerEvents } from "./pointer.js";
 import { BeenaBook } from "./beena-book.js";
+import { SuperTVPCPrinter } from "./super-tvpc-printer.js";
 
 import "./vendor/socket.io.min.js";
 
@@ -1161,6 +1162,8 @@ class EmulatorJS {
         }
         if (this.getCore() === "mame2003_plus" && this.gameManager.getBeenaBookState())
             this.beenaBook = new BeenaBook(this);
+        if (this.getCore() === "mame2003_plus" && /(?:^|\/)stvpc_[^/]*\.zip$/i.test(this.fileName))
+            this.tvpcPrinter = new SuperTVPCPrinter(this);
         this.callEvent("start");
 
         // "Direct Keyboard Input" is a per-core default; apply it (and focus

@@ -317,5 +317,8 @@
     "Book scans could not be loaded": "No se pudieron cargar las páginas del libro",
     "Page": "Página",
     "Pages": "Páginas",
-    "Book closed": "Libro cerrado"
+    "Book closed": "Libro cerrado",
+    "Print": "Imprimir",
+    "Printed image": "Imagen impresa",
+    "Save PNG": "Guardar PNG"
 }

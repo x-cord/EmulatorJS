@@ -346,5 +346,8 @@
     "Book scans could not be loaded": "Book scans could not be loaded",
     "Page": "Page",
     "Pages": "Pages",
-    "Book closed": "Book closed"
+    "Book closed": "Book closed",
+    "Print": "Print",
+    "Printed image": "Printed image",
+    "Save PNG": "Save PNG"
 }
