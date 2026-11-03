@@ -251,7 +251,7 @@ class EmulatorJS {
             let result = await attempt(fullPath);
 
             const typeConfig = Object.values(this.downloadType).find((t) => t.name === type);
-            if (result === -1 && !notWithPath && typeConfig && typeConfig.cdnFallback) {
+            if (result === -1 && !window.EJS_localCoresOnly && !notWithPath && typeConfig && typeConfig.cdnFallback) {
                 console.log("[EJS " + type + "] " + path + " not found locally, attempting to fetch from the emulatorjs cdn.");
                 console.error("**THIS METHOD IS A FAILSAFE, AND NOT OFFICIALLY SUPPORTED. USE AT YOUR OWN RISK**");
                 const version = this.ejs_version.endsWith("-beta") ? "nightly" : this.ejs_version;
@@ -313,7 +313,7 @@ class EmulatorJS {
         this.allSettings = {};
         this.initControlVars();
         this.debug = config.debug;
-        if (this.debug || (window.location && ["localhost", "127.0.0.1"].includes(location.hostname))) {
+        if (!window.EJS_localCoresOnly && (this.debug || (window.location && ["localhost", "127.0.0.1"].includes(location.hostname)))) {
             this.checkForUpdates();
         }
         this.netplayEnabled = true;
