@@ -280,8 +280,13 @@ class EJS_Frontend {
         this.createCheatsMenu();
         this.setVirtualGamepad();
         this.ejs.addEventListener(this.elements.parent, "keydown keyup", this.ejs.keyChange.bind(this.ejs));
-        this.ejs.addEventListener(this.elements.parent, "pointerdown mousedown touchstart", (e) => {
+        this.ejs.addEventListener(window, "keydown", (e) => {
+            if (!e.isEmulatedKeyboard) this.ejs.setActiveInputMode("keyboard");
+        });
+        this.ejs.addEventListener(this.elements.parent, "pointerdown", (e) => {
             if (this.ejs.config.noAutoFocus === true) return;
+            if (e.target !== this.canvas && e.target !== this.game &&
+                e.target !== this.elements.parent && !this.virtualGamepad?.contains(e.target)) return;
             // Defer focus until after the browser's default mousedown action,
             // which otherwise moves focus to <body> and would keep the
             // emscripten keyboard listener (attached to the player element)
@@ -1187,13 +1192,11 @@ class EJS_Frontend {
         volumeSlider.setAttribute("aria-valuemin", 0);
         volumeSlider.setAttribute("aria-valuemax", 100);
 
-        this.ejs.addEventListener(volumeSlider, "change mousemove touchmove mousedown touchstart mouseup", (e) => {
-            setTimeout(() => {
-                const newVal = parseFloat(volumeSlider.value);
-                if (newVal === 0 && this.ejs.muted) return;
-                this.ejs.volume = newVal;
-                this.ejs.setVolume(this.ejs.volume);
-            }, 5);
+        this.ejs.addEventListener(volumeSlider, "input change", () => {
+            const newVal = parseFloat(volumeSlider.value);
+            if (newVal === 0 && this.ejs.muted) return;
+            this.ejs.volume = newVal;
+            this.ejs.setVolume(this.ejs.volume);
         })
 
         if (!this.ejs.config.buttonOpts || this.ejs.config.buttonOpts.volume !== false) {
@@ -1233,7 +1236,7 @@ class EJS_Frontend {
         this.ejs.addEventListener(this.elements.parent, "mousedown touchstart", (e) => {
             if (this.isChild(this.disksMenu, e.target)) return;
             if (e.pointerType === "touch") return;
-            if (e.target === diskButton[0] || e.target === diskButton[2]) return;
+            if (diskButton[0].contains(e.target)) return;
             this.closeDisksMenu();
         })
 
@@ -1257,7 +1260,7 @@ class EJS_Frontend {
         this.ejs.addEventListener(this.elements.parent, "mousedown touchstart", (e) => {
             if (this.isChild(this.settingsMenu, e.target)) return;
             if (e.pointerType === "touch") return;
-            if (e.target === settingButton[0] || e.target === settingButton[2]) return;
+            if (settingButton[0].contains(e.target) || this.elements.menuToggle?.contains(e.target)) return;
             this.closeSettingsMenu();
         })
 
@@ -3937,15 +3940,14 @@ class EJS_Frontend {
 
         if (this.ejs.retroarchOpts && Array.isArray(this.ejs.retroarchOpts)) {
             const retroarchOptsMenu = createSettingParent(true, "RetroArch Options" + " (" + this.localization("Requires restart") + ")", home);
-            this.ejs.retroarchOpts.forEach((option) => {
-                if (!option || !option.title || !option.options) return;
+            this.ejs.retroarchOpts.forEach(option => {
                 addToMenu(this.localization(option.title, this.ejs.config.settingsLanguage),
                     option.name,
                     option.options,
                     option.default,
                     retroarchOptsMenu,
                     true);
-            });
+            })
             checkForEmptyMenu(retroarchOptsMenu);
         }
 

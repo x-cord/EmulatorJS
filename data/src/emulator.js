@@ -113,9 +113,17 @@ class EmulatorJS {
                 }
             }, 50);
         }
+        if (down) {
+            if (source && source.startsWith("gamepad:")) {
+                this.setActiveInputMode("gamepad");
+            } else if (!source || !source.startsWith("touch:")) {
+                this.setActiveInputMode("keyboard");
+            }
+        }
         this.keyboardInput.set(code, down, source);
     }
     simulateGamepadInput(player, button, value) {
+        if (value) this.setActiveInputMode("gamepad");
         const code = this.keyboardGamepad?.[player]?.[button];
         if (this.getSettingValue("keyboardInput") === "enabled" && this.keyboardGamepad) {
             if (code) this.dispatchKeyEvent(code, !!value, `gamepad:${player}:${button}`);
@@ -133,6 +141,7 @@ class EmulatorJS {
             cancelable: true,
             composed: true
         });
+        event.isEmulatedKeyboard = true;
         element.dispatchEvent(event);
     }
     addEventListener(element, listener, callback, options) {
@@ -656,22 +665,8 @@ class EmulatorJS {
                     this.coreName = core.name;
                     this.repository = core.repo;
                     this.defaultCoreOpts = core.options;
-                    if (this.config.coreOpts && typeof this.config.coreOpts === "object" && this.defaultCoreOpts) {
-                        this.defaultCoreOpts.settings = Object.assign({}, this.defaultCoreOpts.settings, this.config.coreOpts);
-                    }
                     this.enableMouseLock = core.options.supportsMouse;
-                    const customRetroarchOpts = this.config.retroarchOpts || (typeof window !== "undefined" && window.EJS_retroarchOpts) || [];
-                    let extraOpts = [];
-                    if (Array.isArray(customRetroarchOpts)) {
-                        extraOpts = customRetroarchOpts;
-                    } else if (customRetroarchOpts && typeof customRetroarchOpts === "object") {
-                        extraOpts = Object.keys(customRetroarchOpts).map((key) => ({
-                            name: key,
-                            value: customRetroarchOpts[key],
-                            isString: typeof customRetroarchOpts[key] === "string"
-                        }));
-                    }
-                    this.retroarchOpts = (core.retroarchOpts || []).concat(extraOpts);
+                    this.retroarchOpts = core.retroarchOpts;
                     this.saveFileExt = core.save;
                     this.nativeSaveConfig = core.nativeSave || null;
                 } else if (k === "license.txt") {
@@ -1286,6 +1281,7 @@ class EmulatorJS {
     bindListeners() {
         this.frontend.bindListeners();
 
+        this.activeInputMode = "keyboard";
         this.gamepad = new GamepadHandler(); //https://github.com/ethanaobrien/Gamepad
         this.gamepad.on("connected", (e) => {
             if (!this.frontend.gamepadLabels) return;
@@ -1320,6 +1316,14 @@ class EmulatorJS {
             return null;
         }
         return gamepad.id + "_" + gamepad.index;
+    }
+    setActiveInputMode(mode) {
+        if (!mode || this.activeInputMode === mode) return;
+        this.activeInputMode = mode;
+        this.callEvent("activeInputModeChange", mode);
+    }
+    getActiveInputMode() {
+        return this.activeInputMode || "keyboard";
     }
     buildButtonOptions(buttonUserOpts) {
         this.defaultButtonOptions = {
@@ -1830,8 +1834,20 @@ class EmulatorJS {
         this.autofireIntervals = {};
     }
     keyChange(e) {
+        if (!this.started || e.isEmulatedKeyboard) return;
+        if (e.type === "keydown") {
+            this.setActiveInputMode("keyboard");
+        }
+        const target = e.target;
+        const editing = target instanceof Element && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
+        const menuOpen = this.frontend.isSettingsMenuOpen() || this.frontend.isPopupOpen();
+        const directKeyboard = this.getSettingValue("keyboardInput") === "enabled";
+        // Worker keyboard callbacks cannot cancel the browser's default action.
+        if (!editing && !menuOpen && !this.paused && (directKeyboard ||
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "PageUp", "PageDown", "Home", "End"].includes(e.key))) {
+            e.preventDefault();
+        }
         if (e.repeat) return;
-        if (!this.started) return;
         if (this.frontend.isRemapping()) {
             const { num, player } = this.frontend.getRemapTarget();
             if (!this.controls[player][num]) {
@@ -1884,6 +1900,10 @@ class EmulatorJS {
         const value = toIntValue(e.value || 0);
         const oldValue = toIntValue(e.oldValue || 0);
         const skippedZero = (value !== 0) && (value + oldValue === 0);
+
+        if (e.type === "buttondown" || (e.type === "axischanged" && value !== 0)) {
+            this.setActiveInputMode("gamepad");
+        }
 
         if (this.frontend.isRemapping()) {
             this.keyboardInput?.releaseGamepads();
