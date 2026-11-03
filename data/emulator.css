@@ -102,6 +102,18 @@
     transform: rotate(-45deg) translateY(-50%) translateX(0);
 }
 
+.ejs_fast_forward_status {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    padding: 2px 8px;
+    color: #fff;
+    background: #0009;
+    font-size: clamp(14px, 2.5vw, 28px);
+    pointer-events: none;
+}
+
 .ejs_game {
     width: inherit;
     height: inherit;

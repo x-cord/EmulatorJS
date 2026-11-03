@@ -167,6 +167,7 @@ class EJS_GameManager {
             "screenshot_directory = \"/\"\n" +
             "block_sram_overwrite = false\n" +
             "video_gpu_screenshot = false\n" +
+            "notification_show_fast_forward = false\n" +
             "audio_latency = 64\n" +
             "audio_out_rate = " + this.getSampleRate() + "\n" +
             "video_top_portrait_viewport = true\n" +
@@ -399,7 +400,7 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
                 this.EJS.frontend.changeSettingOption("save-state-slot", newSlot.toString());
             }
             if (index === 27) {
-                this.functions.toggleFastForward(this.EJS.isFastForward ? !value : value);
+                this.toggleFastForward(this.EJS.isFastForward ? !value : value);
             }
             if (index === 29) {
                 this.functions.toggleSlowMotion(this.EJS.isSlowMotion ? !value : value);
@@ -597,6 +598,7 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
     }
     toggleFastForward(active) {
         this.functions.toggleFastForward(active);
+        this.EJS.frontend.updateFastForwardIndicator(!!active);
     }
     setSlowMotionRatio(ratio) {
         this.functions.setSlowMotionRatio(ratio);

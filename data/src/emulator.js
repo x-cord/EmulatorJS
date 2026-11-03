@@ -108,19 +108,19 @@ class EmulatorJS {
         });
         element.dispatchEvent(event);
     }
-    addEventListener(element, listener, callback) {
+    addEventListener(element, listener, callback, options) {
         const listeners = listener.split(" ");
         let rv = [];
         for (let i = 0; i < listeners.length; i++) {
-            element.addEventListener(listeners[i], callback);
-            const data = { cb: callback, elem: element, listener: listeners[i] };
+            element.addEventListener(listeners[i], callback, options);
+            const data = { cb: callback, elem: element, listener: listeners[i], options };
             rv.push(data);
         }
         return rv;
     }
     removeEventListener(data) {
         for (let i = 0; i < data.length; i++) {
-            data[i].elem.removeEventListener(data[i].listener, data[i].cb);
+            data[i].elem.removeEventListener(data[i].listener, data[i].cb, data[i].options);
         }
     }
     /**
@@ -2208,7 +2208,7 @@ class EmulatorJS {
 
     screenshot(callback, source, format, upscale) {
         const imageFormat = format || this.getSettingValue("screenshotFormat") || this.capture.photo.format;
-        const imageUpscale = upscale || parseInt(this.getSettingValue("screenshotUpscale") || this.capture.photo.upscale);
+        const imageUpscale = upscale ?? parseInt(this.getSettingValue("screenshotUpscale") || this.capture.photo.upscale);
         const screenshotSource = source || this.getSettingValue("screenshotSource") || this.capture.photo.source;
         const videoRotation = parseInt(this.getSettingValue("videoRotation") || 0);
         const aspectRatio = this.gameManager.getVideoDimensions("aspect") || 1.333333;
@@ -2238,12 +2238,12 @@ class EmulatorJS {
                     img.src = screenshotUrl;
                     img.onload = () => {
                         const canvas = document.createElement("canvas");
-                        canvas.width = width * scale;
-                        canvas.height = height * scale;
+                        canvas.width = img.naturalWidth * scale;
+                        canvas.height = img.naturalHeight * scale;
                         const ctx = canvas.getContext("2d", { alpha: false });
                         ctx.imageSmoothingEnabled = false;
                         ctx.scale(scaleWidth, scaleHeight);
-                        ctx.drawImage(img, 0, 0, width, height);
+                        ctx.drawImage(img, 0, 0);
                         canvas.toBlob((blob) => {
                             callback(blob, imageFormat);
                             img.remove();
@@ -2254,41 +2254,27 @@ class EmulatorJS {
                 }
             });
         } else if (screenshotSource === "canvas") {
-            if (width >= height && !videoTurned) {
-                width = height * aspectRatio;
-            } else if (width < height && !videoTurned) {
-                height = width / aspectRatio;
-            } else if (width >= height && videoTurned) {
-                width = height * (1/aspectRatio);
-            } else if (width < height && videoTurned) {
-                width = height / (1/aspectRatio);
-            }
+            const captureAspect = videoTurned ? 1 / aspectRatio : aspectRatio;
+            width = Math.min(width, height * captureAspect);
+            height = width / captureAspect;
             if (imageUpscale === 0) {
-                scale = gameHeight / height;
+                scale = (videoTurned ? gameWidth : gameHeight) / height;
                 scaleHeight = scale;
                 scaleWidth = scale;
             } else if (imageUpscale > 1) {
                 scale = imageUpscale;
             }
             const captureCanvas = document.createElement("canvas");
-            captureCanvas.width = width * scale;
-            captureCanvas.height = height * scale;
+            captureCanvas.width = Math.round(width * scale);
+            captureCanvas.height = Math.round(height * scale);
             captureCanvas.style.display = "none";
             const captureCtx = captureCanvas.getContext("2d", { alpha: false });
             captureCtx.imageSmoothingEnabled = false;
-            captureCtx.scale(scale, scale);
-            const imageAspect = this.frontend.canvas.width / this.frontend.canvas.height;
-            const canvasAspect = width / height;
-            let offsetX = 0;
-            let offsetY = 0;
-
-            if (imageAspect > canvasAspect) {
-                offsetX = (this.frontend.canvas.width - width) / -2;
-            } else if (imageAspect < canvasAspect) {
-                offsetY = (this.frontend.canvas.height - height) / -2;
-            }
+            const offsetX = (this.frontend.canvas.width - width) / 2;
+            const offsetY = (this.frontend.canvas.height - height) / 2;
             const drawNextFrame = () => {
-                captureCtx.drawImage(this.frontend.canvas, offsetX, offsetY, this.frontend.canvas.width, this.frontend.canvas.height);
+                captureCtx.drawImage(this.frontend.canvas, offsetX, offsetY, width, height,
+                    0, 0, captureCanvas.width, captureCanvas.height);
                 captureCanvas.toBlob((blob) => {
                     callback(blob, imageFormat);
                     captureCanvas.remove();

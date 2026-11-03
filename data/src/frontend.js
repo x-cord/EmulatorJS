@@ -10,7 +10,21 @@ class EJS_Frontend {
         this.textElem = null;
         this.setElements(element);
         this.canvas = this.ejs.createElement("canvas");
+        const getContext = this.canvas.getContext.bind(this.canvas);
+        this.canvas.getContext = (type, attributes) => getContext(type,
+            ["webgl", "webgl2", "experimental-webgl"].includes(type)
+                ? { ...attributes, preserveDrawingBuffer: true } : attributes);
         this.canvas.classList.add("ejs_canvas");
+    }
+    updateFastForwardIndicator(active) {
+        if (!this.fastForwardIndicator) {
+            this.fastForwardIndicator = this.ejs.createElement("div");
+            this.fastForwardIndicator.className = "ejs_fast_forward_status";
+            this.fastForwardIndicator.textContent = this.localization("Fast Forward");
+            this.fastForwardIndicator.setAttribute("role", "status");
+            this.game.appendChild(this.fastForwardIndicator);
+        }
+        this.fastForwardIndicator.hidden = !active;
     }
     updatePlayPauseButtons(paused) {
         const [pauseButton, playButton] = this.elements.bottomBar.playPause;
@@ -471,20 +485,28 @@ class EJS_Frontend {
         this.ejs.addEventListener(this.game, "contextmenu", (e) => {
             e.preventDefault();
             if ((this.ejs.config.buttonOpts && this.ejs.config.buttonOpts.rightClick === false) || !this.ejs.started || this.ejs.lightgunActive) return;
-            const parentRect = this.elements.parent.getBoundingClientRect();
+            const parent = this.elements.parent;
+            const parentRect = parent.getBoundingClientRect();
             this.elements.contextmenu.style.display = "block";
-            const rect = this.elements.contextmenu.getBoundingClientRect();
-            const up = e.offsetY + rect.height > parentRect.height - 25;
-            const left = e.offsetX + rect.width > parentRect.width - 5;
-            this.elements.contextmenu.style.left = (e.offsetX - (left ? rect.width : 0)) + "px";
-            this.elements.contextmenu.style.top = (e.offsetY - (up ? rect.height : 0)) + "px";
+            const x = (e.clientX - parentRect.left) * parent.offsetWidth / parentRect.width - parent.clientLeft;
+            const y = (e.clientY - parentRect.top) * parent.offsetHeight / parentRect.height - parent.clientTop;
+            const width = this.elements.contextmenu.offsetWidth;
+            const height = this.elements.contextmenu.offsetHeight;
+            const up = y + height > parent.clientHeight - 25;
+            const left = x + width > parent.clientWidth - 5;
+            this.elements.contextmenu.style.left = (parent.scrollLeft + Math.max(0,
+                Math.min(x - (left ? width : 0), parent.clientWidth - width))) + "px";
+            this.elements.contextmenu.style.top = (parent.scrollTop + Math.max(0,
+                Math.min(y - (up ? height : 0), parent.clientHeight - height))) + "px";
         })
         const hideMenu = () => {
             this.elements.contextmenu.style.display = "none";
         }
         this.ejs.addEventListener(this.elements.contextmenu, "contextmenu", (e) => e.preventDefault());
         this.ejs.addEventListener(this.elements.parent, "contextmenu", (e) => e.preventDefault());
-        this.ejs.addEventListener(this.game, "mousedown touchend", hideMenu);
+        this.ejs.addEventListener(this.elements.parent, "pointerdown mousedown touchend", (event) => {
+            if (!this.elements.contextmenu.contains(event.target)) hideMenu();
+        }, { capture: true });
         // Prevent mouse buttons 4/5 (back/forward) from navigating away
         // when used as lightgun Start/Select. Works in Chromium-based
         // browsers; Firefox handles back/forward navigation before page
