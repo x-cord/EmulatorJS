@@ -111,6 +111,7 @@ class EJS_Frontend {
         this.diskParent.style.display = "none";
     }
     setMenuBarButtonVisible(visible) {
+        if (!this.elements.menuToggle) return;
         this.elements.menuToggle.style.display = "";
         this.elements.menuToggle.style.opacity = visible ? 0.5 : 0;
     }
@@ -1245,6 +1246,7 @@ class EJS_Frontend {
             settingButton[2].classList.toggle("ejs_settings_text", this.settingsMenuOpen);
         }, this.settingParent, true);
         this.elements.menu.appendChild(this.settingParent);
+        this.toggleSettingsMenu = () => settingButton[0].click();
         this.closeSettingsMenu = () => {
             if (!this.settingsMenu) return;
             this.settingsMenuOpen = false;
@@ -3080,7 +3082,9 @@ class EJS_Frontend {
         })
 
         if (this.ejs.touch || this.ejs.hasTouchScreen) {
-            const menuButton = this.ejs.createElement("div");
+            const menuButton = this.ejs.createElement("button");
+            menuButton.type = "button";
+            menuButton.setAttribute("aria-label", this.localization("Menu Bar"));
             menuButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M0 96C0 78.33 14.33 64 32 64H416C433.7 64 448 78.33 448 96C448 113.7 433.7 128 416 128H32C14.33 128 0 113.7 0 96zM0 256C0 238.3 14.33 224 32 224H416C433.7 224 448 238.3 448 256C448 273.7 433.7 288 416 288H32C14.33 288 0 273.7 0 256zM416 448H32C14.33 448 0 433.7 0 416C0 398.3 14.33 384 32 384H416C433.7 384 448 398.3 448 416C448 433.7 433.7 448 416 448z"/></svg>';
             menuButton.classList.add("ejs_virtualGamepad_open");
             menuButton.style.display = "none";
@@ -3092,18 +3096,13 @@ class EJS_Frontend {
                 }
             });
             this.elements.parent.appendChild(menuButton);
-            let timeout;
-            let ready = true;
-            this.ejs.addEventListener(menuButton, "touchstart touchend mousedown mouseup click", (e) => {
-                if (!ready) return;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    ready = true;
-                }, 2000)
-                ready = false;
+            this.ejs.addEventListener(menuButton, "pointerdown mousedown touchstart", (e) => e.stopPropagation());
+            this.ejs.addEventListener(menuButton, "click", (e) => {
                 e.preventDefault();
-                this.menu.toggle();
-            })
+                e.stopPropagation();
+                if (this.dockedMenu) this.toggleSettingsMenu();
+                else this.menu.toggle();
+            });
             this.elements.menuToggle = menuButton;
         }
 

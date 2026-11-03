@@ -1,3 +1,4 @@
+import { KeyboardInput } from "./keyboard-input.js";
 import { EJS_Cache, EJS_CacheItem, EJS_FileItem, EJS_Download } from "./cache.js";
 import { EJS_COMPRESSION } from "./compression.js";
 import { EJS_GameManager } from "./GameManager.js";
@@ -98,7 +99,31 @@ class EmulatorJS {
     // Simulate a keyboard event on the player's canvas, where the core's
     // emscripten keyboard listener is attached. `code` is the DOM event code
     // (e.g. "ArrowUp", "Enter"); the runtime translates it to a retro key.
-    dispatchKeyEvent(code, down) {
+    dispatchKeyEvent(code, down, source) {
+        if (!this.keyboardInput) {
+            this.keyboardInput = new KeyboardInput((key, pressed) => this.emitKeyEvent(key, pressed), 100,
+                () => this.gameManager.getFrameNum(), this.keyboardMinimumFrames || 0);
+            window.addEventListener("blur", () => this.keyboardInput.clear());
+            document.addEventListener("visibilitychange", () => {
+                if (document.hidden) this.keyboardInput.clear();
+            });
+            this.keyboardInputGuard = setInterval(() => {
+                if (this.paused || this.frontend.isSettingsMenuOpen() || this.frontend.isPopupOpen() || this.frontend.isRemapping()) {
+                    this.keyboardInput.clear();
+                }
+            }, 50);
+        }
+        this.keyboardInput.set(code, down, source);
+    }
+    simulateGamepadInput(player, button, value) {
+        const code = this.keyboardGamepad?.[player]?.[button];
+        if (this.getSettingValue("keyboardInput") === "enabled" && this.keyboardGamepad) {
+            if (code) this.dispatchKeyEvent(code, !!value, `gamepad:${player}:${button}`);
+            return;
+        }
+        this.gameManager.simulateInput(player, button, value);
+    }
+    emitKeyEvent(code, down) {
         const element = this.frontend && this.frontend.canvas;
         if (!element || typeof KeyboardEvent !== "function") return;
         const event = new KeyboardEvent(down ? "keydown" : "keyup", {
@@ -1275,6 +1300,7 @@ class EmulatorJS {
             this.frontend.updateGamepadLabels();
         })
         this.gamepad.on("disconnected", (e) => {
+            this.keyboardInput?.releaseGamepads();
             const gamepadSelection = this.getGamepadSelectionValue(e.gamepadIndex);
             if (!gamepadSelection) return;
             for (let i = 0; i < this.frontend.gamepadSelection.length; i++) {
@@ -1860,6 +1886,7 @@ class EmulatorJS {
         const skippedZero = (value !== 0) && (value + oldValue === 0);
 
         if (this.frontend.isRemapping()) {
+            this.keyboardInput?.releaseGamepads();
             if ("buttonup" === e.type || (e.type === "axischanged" && value === 0)) return;
             const target = this.frontend.getRemapTarget();
             const num = target.num;
@@ -1889,51 +1916,51 @@ class EmulatorJS {
                     const isButtonUp = e.type === "buttonup";
                     const value = isButtonUp ? 0 : inputValue;
 
-                    if (this.isAutofireEnabled(i, j) && !isAnalog) {
+                    if (!this.keyboardGamepad && this.isAutofireEnabled(i, j) && !isAnalog) {
                         isButtonUp ? this.stopAutofire(i, j) : this.startAutofire(i, j, inputValue);
                     } else {
-                        this.gameManager.simulateInput(i, j, value);
+                        this.simulateGamepadInput(i, j, value);
                     }
                 } else if (e.type === "axischanged") {
                     if (typeof controlValue === "string" && controlValue.split(":")[0] === e.axis) {
                         if (isAnalog) {
                             if (j === 16 || j === 17) {
                                 if (e.value > 0) {
-                                    this.gameManager.simulateInput(i, 16, 0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 17, 0);
+                                    this.simulateGamepadInput(i, 16, 0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 17, 0);
                                 } else {
-                                    this.gameManager.simulateInput(i, 17, -0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 16, 0);
+                                    this.simulateGamepadInput(i, 17, -0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 16, 0);
                                 }
                             } else if (j === 18 || j === 19) {
                                 if (e.value > 0) {
-                                    this.gameManager.simulateInput(i, 18, 0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 19, 0);
+                                    this.simulateGamepadInput(i, 18, 0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 19, 0);
                                 } else {
-                                    this.gameManager.simulateInput(i, 19, -0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 18, 0);
+                                    this.simulateGamepadInput(i, 19, -0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 18, 0);
                                 }
                             } else if (j === 20 || j === 21) {
                                 if (e.value > 0) {
-                                    this.gameManager.simulateInput(i, 20, 0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 21, 0);
+                                    this.simulateGamepadInput(i, 20, 0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 21, 0);
                                 } else {
-                                    this.gameManager.simulateInput(i, 21, -0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 20, 0);
+                                    this.simulateGamepadInput(i, 21, -0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 20, 0);
                                 }
                             } else if (j === 22 || j === 23) {
                                 if (e.value > 0) {
-                                    this.gameManager.simulateInput(i, 22, 0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 23, 0);
+                                    this.simulateGamepadInput(i, 22, 0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 23, 0);
                                 } else {
-                                    this.gameManager.simulateInput(i, 23, -0x7fff * e.value);
-                                    this.gameManager.simulateInput(i, 22, 0);
+                                    this.simulateGamepadInput(i, 23, -0x7fff * e.value);
+                                    this.simulateGamepadInput(i, 22, 0);
                                 }
                             }
                         } else if (value === 0 || controlValue === e.label || controlValue === `${e.axis}:${value}`) {
-                            this.gameManager.simulateInput(i, j, ((value === 0) ? 0 : 1));
+                            this.simulateGamepadInput(i, j, ((value === 0) ? 0 : 1));
                         } else if (skippedZero) {
-                            this.gameManager.simulateInput(i, j, 0);
+                            this.simulateGamepadInput(i, j, 0);
                         }
                     }
                 }
@@ -1949,6 +1976,7 @@ class EmulatorJS {
         }));
     }
     saveSettings() {
+        this.keyboardInput?.releaseGamepads();
         const bindings = this.getControlBindings();
         const signature = JSON.stringify(bindings);
         if (signature !== this.controlBindingSignature) {

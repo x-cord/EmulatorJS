@@ -98,7 +98,12 @@ class GamepadHandler {
                 this.gamepads[oldIndex] = gamepadToSave;
             })
             if (!hasGamepad) {
-                this.gamepads.push(gamepads[index]);
+                this.gamepads.push({
+                    id: gamepad.id,
+                    index: gamepad.index,
+                    axes: gamepad.axes.map(() => 0),
+                    buttons: gamepad.buttons.map(() => ({ pressed: false }))
+                });
                 this.gamepads.sort((a, b) => {
                     if (a == null && b == null) return 0;
                     if (a == null) return 1;

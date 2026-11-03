@@ -1,3 +1,5 @@
+const TOUCH_PEN_SETTLE_FRAMES = 6;
+
 // Storyware geometry and scan pairing follow MAME's CC0 beena.lay layout.
 export class BeenaBook {
     constructor(emulator) {
@@ -11,6 +13,10 @@ export class BeenaBook {
         this.pointer = null;
         this.bookPointerPosition = null;
         this.pendingPress = null;
+        this.penQueue = [];
+        this.activePenStroke = null;
+        this.pointerStroke = null;
+        this.penReleaseFrame = -1;
         this.pressFrame = null;
         this.releaseFrame = null;
         this.disposed = false;
@@ -44,16 +50,25 @@ export class BeenaBook {
         for (const element of [this.parent, this.controls, this.status]) this.resize.observe(element);
         this.tick = () => {
             if (this.disposed) return;
-            if (this.pendingPress && !this.canInteract()) this.release(false, true);
-            if (this.pendingPress && this.manager.getFrameNum() > this.pendingPress.frame) {
+            const frame = this.manager.getFrameNum();
+            if ((this.activePenStroke || this.penQueue.length) && !this.canInteract()) this.release(false, true);
+            this.startPenStroke(frame);
+            if (this.pendingPress && frame >= this.pendingPress.frame + this.pendingPress.settleFrames) {
                 const { x, y, target } = this.pendingPress;
                 this.pendingPress = null;
-                this.pressFrame = this.manager.getFrameNum();
+                this.pressFrame = frame;
                 this.manager.setBeenaBookPen(x, y, true, target);
-                if (this.pointer === null) this.releaseFrame = this.pressFrame;
             }
-            if (this.releaseFrame !== null && (this.manager.getFrameNum() > this.releaseFrame || !this.canInteract()))
-                this.release(false, true);
+            if (this.activePenStroke?.ended && this.pressFrame !== null) {
+                this.releaseFrame = this.pressFrame;
+                if (frame > this.pressFrame) {
+                    const { x, y, target } = this.activePenStroke;
+                    this.manager.setBeenaBookPen(x, y, false, target);
+                    this.activePenStroke = null;
+                    this.pressFrame = this.releaseFrame = null;
+                    this.penReleaseFrame = frame;
+                }
+            }
             this.render();
             this.animation = requestAnimationFrame(this.tick);
         };
@@ -253,24 +268,25 @@ export class BeenaBook {
                 if (!this.canInteract() || this.pointer !== null || event.button !== 0) return;
                 event.preventDefault();
                 event.stopImmediatePropagation();
-                if (this.pendingPress || this.releaseFrame !== null) this.release(false, true);
                 this.pointer = event.pointerId;
                 this.captureSurface = surface;
                 const [x, y] = point(event);
-                // Let the firmware sample the new position before pen contact.
-                this.pendingPress = { x, y, target, frame: this.manager.getFrameNum() };
-                this.pressFrame = null;
-                this.releaseFrame = null;
+                this.pointerStroke = { x, y, target, ended: false,
+                    settleFrames: event.pointerType === "touch" ? TOUCH_PEN_SETTLE_FRAMES : 1 };
+                this.penQueue.push(this.pointerStroke);
+                this.startPenStroke(this.manager.getFrameNum());
                 surface.setPointerCapture(event.pointerId);
                 this.parent.focus({ preventScroll: true });
-                this.manager.setBeenaBookPen(x, y, false, target);
             }, { capture: true });
             this.listen(surface, "pointermove", event => {
                 if (!this.canInteract() || (this.pointer !== null && (this.pointer !== event.pointerId || this.captureSurface !== surface))) return;
-                if (this.pointer === null && (this.pendingPress || this.releaseFrame !== null)) return;
+                if (this.pointer === null && (this.activePenStroke || this.penQueue.length)) return;
                 const [x, y] = point(event);
-                if (this.pendingPress) Object.assign(this.pendingPress, { x, y });
-                this.manager.setBeenaBookPen(x, y, this.pointer !== null && !this.pendingPress, target);
+                if (this.pointerStroke) {
+                    Object.assign(this.pointerStroke, { x, y });
+                    if (this.pointerStroke !== this.activePenStroke) return;
+                }
+                this.manager.setBeenaBookPen(x, y, !!this.activePenStroke && !this.pendingPress, target);
             });
             for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
                 this.listen(surface, type, event => {
@@ -287,17 +303,32 @@ export class BeenaBook {
         this.listen(window, "blur", () => this.release(false, true));
         this.listen(document, "visibilitychange", () => { if (document.hidden) this.release(false, true); });
     }
+    startPenStroke(frame) {
+        if (this.activePenStroke || !this.penQueue.length || frame <= this.penReleaseFrame) return;
+        this.activePenStroke = this.pendingPress = this.penQueue.shift();
+        this.pendingPress.frame = frame;
+        this.pressFrame = this.releaseFrame = null;
+        const { x, y, target } = this.pendingPress;
+        this.manager.setBeenaBookPen(x, y, false, target);
+    }
     release(clearPosition = false, immediate = false) {
         const pointer = this.pointer;
         this.pointer = null;
         const state = this.manager.getBeenaBookState();
         const keepPosition = !clearPosition && state;
         const defer = !clearPosition && !immediate && this.canInteract();
-        if (!defer) this.pendingPress = null;
-        // Quick taps must deliver both a position sample and a contact sample.
-        const wait = defer && (this.pendingPress || (pointer !== null && this.manager.getFrameNum() <= this.pressFrame));
-        this.releaseFrame = wait && !this.pendingPress ? this.pressFrame : null;
-        if (!wait) this.manager.setBeenaBookPen(keepPosition ? state.x : -1, keepPosition ? state.y : -1, false);
+        if (defer && this.pointerStroke) {
+            this.pointerStroke.ended = true;
+            if (this.pointerStroke === this.activePenStroke && this.pressFrame !== null)
+                this.releaseFrame = this.pressFrame;
+        } else {
+            this.penQueue.length = 0;
+            this.activePenStroke = this.pendingPress = null;
+            this.pressFrame = this.releaseFrame = null;
+            this.manager.setBeenaBookPen(keepPosition ? state.x : -1, keepPosition ? state.y : -1, false);
+            this.penReleaseFrame = this.manager.getFrameNum();
+        }
+        this.pointerStroke = null;
         if (pointer !== null && this.captureSurface?.hasPointerCapture(pointer)) this.captureSurface.releasePointerCapture(pointer);
         this.captureSurface = null;
     }
