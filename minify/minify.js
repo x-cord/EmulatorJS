@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 
 import { rollup } from "rollup";
 import terser from "@rollup/plugin-terser";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
 
 import { minify } from "@node-minify/core";
 import { cleanCss } from "@node-minify/clean-css";
@@ -17,14 +18,19 @@ async function doMinify() {
         const bundle = await rollup({
             input: path.join(rootPath, "data/src/emulator.js"),
             context: "window",
-            plugins: [terser()]
+            plugins: [nodeResolve({ browser: true }), terser({ maxWorkers: 2 })]
         });
 
-        await bundle.write({
+        const output = await bundle.write({
             file: path.join(rootPath, "data/emulator.min.js"),
             format: "es",
             sourcemap: true
         });
+        if (!output.output.some(chunk => chunk.type === "chunk" && chunk.isEntry && chunk.exports.includes("default"))) {
+            throw new Error("The loader requires an ES-module default export");
+        }
+        await fs.mkdir(path.join(rootPath, "data/licenses"), { recursive: true });
+        await fs.copyFile(path.join(rootPath, "node_modules/@zip.js/zip.js/LICENSE"), path.join(rootPath, "data/licenses/zip.js.txt"));
         console.log("Bundled and Minified JS");
 
         await minify({
@@ -35,6 +41,7 @@ async function doMinify() {
         console.log("Minified CSS");
     } catch(e) {
         console.error(e);
+        process.exitCode = 1;
     }
 }
 

@@ -15,6 +15,8 @@
     },
     "scripts": {
         "start": "http-server",
+        "test": "node --test tests/*.test.mjs",
+        "test:bundle": "node tests/bundle-contract.mjs",
         "minify": "node minify/minify.js",
         "build": "node build.js",
         "update": "node update.js",
@@ -23,6 +25,7 @@
     "dependencies": {
         "@node-minify/clean-css": "^10.4.0",
         "@node-minify/core": "^10.4.0",
+        "@zip.js/zip.js": "^2.24.0",
         "http-server": "^14.1.1",
         "node-7z": "^3.0.0"
     },
@@ -30,6 +33,7 @@
         "@emulatorjs/cores": "latest"
     },
     "devDependencies": {
+        "@rollup/plugin-node-resolve": "^16.0.3",
         "@rollup/plugin-terser": "^1.0.0",
         "eslint": "^10.0.2",
         "jsdoc": "^4.0.5",
