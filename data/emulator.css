@@ -1983,3 +1983,50 @@
     height: 6.666667%;
     z-index: 2;
 }
+
+/* A reserved toolbar below pointer-driven games. */
+.ejs_docked_menu {
+    --ejs-toolbar-height: 50px;
+}
+@media (width < 320px) {
+    .ejs_docked_menu {
+        --ejs-toolbar-height: 86px;
+    }
+}
+.ejs_docked_menu > .ejs_canvas_parent {
+    position: relative;
+    height: max(0px, calc(100% - var(--ejs-toolbar-height)));
+}
+.ejs_parent.ejs_docked_menu > .ejs_menu_bar {
+    height: var(--ejs-toolbar-height);
+    align-content: center;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: none;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    transition: none;
+    padding: 8px;
+    gap: 4px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: #000;
+    border: 0;
+}
+.ejs_docked_menu .ejs_volume_parent {
+    flex: 0 1 88px;
+    min-width: 88px;
+    padding-right: 0;
+}
+.ejs_docked_menu.ejs_small_screen .ejs_menu_button {
+    margin: 0 !important;
+    width: auto;
+    padding: 7px;
+}
+.ejs_docked_menu.ejs_small_screen .ejs_menu_text,
+.ejs_docked_menu > .ejs_virtualGamepad_open {
+    display: none !important;
+}

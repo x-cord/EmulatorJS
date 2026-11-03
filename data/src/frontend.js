@@ -834,6 +834,19 @@ class EJS_Frontend {
 
         return first.compareDocumentPosition && first.compareDocumentPosition(second) & 16;
     }
+    dockMenu() {
+        if (this.dockedMenu) return;
+        this.dockedMenu = true;
+        this.elements.parent.classList.add("ejs_docked_menu");
+        this.createBottomMenuBarListeners();
+        this.elements.menu.classList.remove("ejs_menu_bar_hidden");
+        this.elements.menu.setAttribute("role", "toolbar");
+        for (const button of this.elements.menu.querySelectorAll("button")) {
+            const label = button.querySelector(".ejs_menu_text")?.textContent;
+            if (label) button.setAttribute("aria-label", label);
+        }
+
+    }
     createBottomMenuBar() {
         this.elements.menu = this.ejs.createElement("div");
 
@@ -848,7 +861,7 @@ class EJS_Frontend {
         let timeout = null;
         let ignoreEvents = false;
         const hide = () => {
-            if (this.ejs.paused || this.settingsMenuOpen || this.disksMenuOpen) return;
+            if (this.dockedMenu || this.ejs.paused || this.settingsMenuOpen || this.disksMenuOpen) return;
             this.elements.menu.classList.add("ejs_menu_bar_hidden");
         }
 
@@ -860,6 +873,7 @@ class EJS_Frontend {
 
         this.menu = {
             close: () => {
+                if (this.dockedMenu) return;
                 clearTimeout(timeout);
                 this.elements.menu.classList.add("ejs_menu_bar_hidden");
             },
@@ -870,7 +884,7 @@ class EJS_Frontend {
                 this.elements.menu.classList.remove("ejs_menu_bar_hidden");
             },
             toggle: () => {
-                if (!this.ejs.started) return;
+                if (this.dockedMenu || !this.ejs.started) return;
                 clearTimeout(timeout);
                 if (this.elements.menu.classList.contains("ejs_menu_bar_hidden")) {
                     timeout = setTimeout(hide, 3000);
@@ -904,6 +918,8 @@ class EJS_Frontend {
                 show();
             }
             if (this.menu.mousemoveListener) this.ejs.removeEventListener(this.menu.mousemoveListener);
+            if (this.menu.clickListener) this.ejs.removeEventListener(this.menu.clickListener);
+            if (this.dockedMenu) return;
             
             if ((this.ejs.preGetSetting("menubarBehavior") || "downward") === "downward") {
                 this.menu.mousemoveListener = this.ejs.addEventListener(this.elements.parent, "mousemove", mouseListener);
@@ -919,6 +935,7 @@ class EJS_Frontend {
 
         let tmout;
         this.ejs.addEventListener(this.elements.parent, "mousedown touchstart", (e) => {
+            if (this.dockedMenu) return;
             if (this.isChild(this.elements.menu, e.target) || this.isChild(this.elements.menuToggle, e.target)) return;
             if (!this.ejs.started || this.elements.menu.classList.contains("ejs_menu_bar_hidden") || this.isPopupOpen()) return;
             const width = this.elements.parent.getBoundingClientRect().width;
