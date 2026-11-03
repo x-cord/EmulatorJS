@@ -1,4 +1,9 @@
 {
+    "NO SAVE DATA AVAILABLE": "Todavía no hay datos guardados.",
+    "FAILED TO SAVE DATA": "No se pudieron descargar los datos guardados.",
+    "FAILED TO LOAD SAVE DATA": "No se pudieron cargar los datos guardados. Comprueba el archivo e inténtalo de nuevo.",
+    "LOADED SAVE DATA": "Datos guardados cargados.",
+
     "0": "0",
     "1": "1",
     "2": "2",

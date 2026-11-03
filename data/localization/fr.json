@@ -1,4 +1,9 @@
 {
+    "NO SAVE DATA AVAILABLE": "Aucune sauvegarde n’est disponible pour le moment.",
+    "FAILED TO SAVE DATA": "Impossible de télécharger la sauvegarde.",
+    "FAILED TO LOAD SAVE DATA": "Impossible de charger la sauvegarde. Vérifiez le fichier et réessayez.",
+    "LOADED SAVE DATA": "Sauvegarde chargée.",
+
     "0": "0",
     "1": "1",
     "2": "2",
@@ -329,7 +334,7 @@
     "Mix frames": "Mix frames",
     "WebGL2": "WebGL2",
     "Requires restart": "Redémarrage requis",
-    "VSync": "VSync",
+    "Frame Pacing": "Cadence des images",
     "Video Rotation": "Rotation vidéo",
     "Rewind Enabled (Requires restart)": "Rembobinage activé (Redémarrage requis)",
     "System Save interval": "Intervalle de sauvegarde du système",

@@ -329,7 +329,7 @@
     "Mix frames": "프레임 혼합",
     "WebGL2": "WebGL2",
     "Requires restart": "재시작 필요함",
-    "VSync": "수직동기화",
+    "Frame Pacing": "프레임 페이싱",
     "Video Rotation": "화면 회전",
     "System Save interval": "시스템 세이브 간격",
     "Menu Bar Button": "메뉴바 버튼",

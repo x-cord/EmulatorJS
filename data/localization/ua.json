@@ -329,7 +329,7 @@
     "Mix frames": "Змішування кадрів",
     "WebGL2": "WebGL2",
     "Requires restart": "Потрібен перезапуск",
-    "VSync": "VSync",
+    "Frame Pacing": "Частота кадрів",
     "Video Rotation": "Обертання відео",
     "Rewind Enabled (Requires restart)": "Перемотування ввімкнено (потрібен перезапуск)",
     "System Save interval": "Інтервал збереження системи",

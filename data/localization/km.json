@@ -329,7 +329,7 @@
     "Mix frames": "Mix frames",
     "WebGL2": "WebGL2",
     "Requires restart": "តម្រូវឱ្យចាប់ផ្តើមឡើងវិញ",
-    "VSync": "VSync",
+    "Frame Pacing": "ការកំណត់ល្បឿនស៊ុម",
     "Video Rotation": "ការបង្វិលវីដេអូ",
     "Rewind Enabled (Requires restart)": "បើកការសារថយក្រោយ (តម្រូវឱ្យចាប់ផ្តើមឡើងវិញ)",
     "System Save interval": "ចន្លោះពេលរក្សាទុកប្រព័ន្ធ",

@@ -329,7 +329,7 @@
     "Mix frames": "混合帧",
     "WebGL2": "WebGL2",
     "Requires restart": "需要重启",
-    "VSync": "垂直同步",
+    "Frame Pacing": "帧率控制",
     "Video Rotation": "视频旋转",
     "Rewind Enabled (Requires restart)": "启用回退（需重启）",
     "System Save interval": "系统保存间隔",

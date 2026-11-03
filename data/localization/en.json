@@ -1,4 +1,9 @@
 {
+    "NO SAVE DATA AVAILABLE": "No save data is available yet.",
+    "FAILED TO SAVE DATA": "Failed to download save data.",
+    "FAILED TO LOAD SAVE DATA": "Failed to load save data. Check the file and try again.",
+    "LOADED SAVE DATA": "Save data loaded.",
+
     "0": "0",
     "1": "1",
     "2": "2",
@@ -329,7 +334,7 @@
     "Mix frames": "Mix frames",
     "WebGL2": "WebGL2",
     "Requires restart": "Requires restart",
-    "VSync": "VSync",
+    "Frame Pacing": "Frame Pacing",
     "Video Rotation": "Video Rotation",
     "Rewind Enabled (Requires restart)": "Rewind Enabled (Requires restart)",
     "System Save interval": "System Save interval",

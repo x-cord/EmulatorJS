@@ -1,4 +1,9 @@
 {
+    "NO SAVE DATA AVAILABLE": "セーブデータはまだありません。",
+    "FAILED TO SAVE DATA": "セーブデータをダウンロードできませんでした。",
+    "FAILED TO LOAD SAVE DATA": "セーブデータを読み込めませんでした。ファイルを確認して、もう一度お試しください。",
+    "LOADED SAVE DATA": "セーブデータを読み込みました。",
+
     "0": "0",
     "1": "1",
     "2": "2",
