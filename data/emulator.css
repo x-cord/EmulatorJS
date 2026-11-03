@@ -382,7 +382,7 @@
 .ejs_context_menu {
     position: absolute;
     display: none;
-    z-index: 9;
+    z-index: 10000;
     background: rgba(16, 16, 16, 0.9);
     border-radius: 3px;
     font-size: 13px;
@@ -1752,6 +1752,10 @@
 }
 
 .ejs_virtualGamepad_open {
+    padding: 10px;
+    border: 0;
+    background: transparent;
+    box-sizing: content-box;
     display: inline-block;
     width: 24px;
     height: 24px;
@@ -1867,10 +1871,10 @@
     margin: 0 auto;
 }
 .ejs_beena_book {
-    padding: 0 0 48px;
+    padding: 6px 0 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     background: #211e19;
     border-top: 1px solid #51483b;
 }
@@ -1988,12 +1992,18 @@
 .ejs_docked_menu {
     --ejs-toolbar-height: 50px;
 }
+.ejs_docked_menu.ejs_beena {
+    --ejs-toolbar-height: 42px;
+}
 @media (width < 320px) {
     .ejs_docked_menu {
         --ejs-toolbar-height: 86px;
     }
+    .ejs_docked_menu.ejs_beena {
+        --ejs-toolbar-height: 78px;
+    }
 }
-.ejs_docked_menu > .ejs_canvas_parent {
+.ejs_docked_menu:not(.ejs_beena) > .ejs_canvas_parent {
     position: relative;
     height: max(0px, calc(100% - var(--ejs-toolbar-height)));
 }
@@ -2016,6 +2026,10 @@
     background: #000;
     border: 0;
 }
+.ejs_parent.ejs_docked_menu.ejs_beena > .ejs_menu_bar {
+    background: #211e19;
+    padding-top: 0;
+}
 .ejs_docked_menu .ejs_volume_parent {
     flex: 0 1 88px;
     min-width: 88px;
@@ -2026,7 +2040,6 @@
     width: auto;
     padding: 7px;
 }
-.ejs_docked_menu.ejs_small_screen .ejs_menu_text,
-.ejs_docked_menu > .ejs_virtualGamepad_open {
+.ejs_docked_menu.ejs_small_screen .ejs_menu_text {
     display: none !important;
 }
