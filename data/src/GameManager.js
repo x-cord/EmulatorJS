@@ -1,3 +1,5 @@
+import { NativeSave } from "./native-save.js";
+
 class EJS_GameManager {
     constructor(Module, EJS) {
         this.EJS = EJS;
@@ -38,6 +40,7 @@ class EJS_GameManager {
             getControllerPortInfo: this.Module.cwrap("ejs_get_controller_port_info", "string", [])
         }
 
+        this.nativeSave = new NativeSave(this);
         this.writeFile("/home/web_user/.config/retroarch/retroarch.cfg", this.getRetroArchCfg());
 
         this.writeConfigFile();
@@ -533,13 +536,20 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
         this.functions.setCurrentDisk(disk);
     }
     getSaveFilePath() {
-        return this.functions.getSaveFilePath();
+        const descriptor = this.nativeSave.descriptor;
+        return descriptor?.type === "file" ? descriptor.path : this.functions.getSaveFilePath();
     }
     saveSaveFiles() {
+        if (this.nativeSave.writing) return;
+        if (this.Module._ejs_flush_native_save && !this.Module._ejs_flush_native_save()) return false;
         this.functions.saveSaveFiles();
         this.EJS.callEvent("saveSaveFiles", this.getSaveFile(false));
-        //this.FS.syncfs(false, () => {});
+        return true;
     }
+    supportsNativeSave() { return !!this.nativeSave.descriptor; }
+    flushSaveData() { return this.nativeSave.flush(); }
+    exportSaveData() { return this.nativeSave.export(); }
+    importSaveData(file) { return this.nativeSave.import(file); }
     supportsStates() {
         return !!this.functions.supportsStates();
     }
@@ -553,12 +563,13 @@ IF EXIST AUTORUN.BAT CALL AUTORUN.BAT
         if (save !== false) {
             this.saveSaveFiles();
         }
+        if (this.nativeSave.descriptor?.type === "directory") return null;
         const exists = this.FS.analyzePath(this.getSaveFilePath()).exists;
         return (exists ? this.FS.readFile(this.getSaveFilePath()) : null);
     }
     loadSaveFiles() {
         this.clearEJSResetTimer();
-        this.functions.loadSaveFiles();
+        this.nativeSave.refresh(this.nativeSave.descriptor);
     }
     setFastForwardRatio(ratio) {
         this.functions.setFastForwardRatio(ratio);

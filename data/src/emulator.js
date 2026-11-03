@@ -462,11 +462,19 @@ class EmulatorJS {
         if (!Array.isArray(this.functions[event])) this.functions[event] = [];
         this.functions[event].push(func);
     }
+    off(event, func) {
+        if (this.functions?.[event]) this.functions[event] = this.functions[event].filter(callback => callback !== func);
+    }
     callEvent(event, data) {
         if (!this.functions) this.functions = {};
         if (!Array.isArray(this.functions[event])) return 0;
         this.functions[event].forEach(e => e(data));
         return this.functions[event].length;
+    }
+    async callEventAsync(event, data) {
+        const results = [];
+        for (const callback of [...(this.functions?.[event] || [])]) results.push(await callback(data));
+        return results;
     }
     checkCoreCompatibility(version) {
         if (this.versionAsInt(version.minimumEJSVersion) > this.versionAsInt(this.ejs_version)) {
@@ -562,6 +570,7 @@ class EmulatorJS {
                     }
                     this.retroarchOpts = (core.retroarchOpts || []).concat(extraOpts);
                     this.saveFileExt = core.save;
+                    this.nativeSaveConfig = core.nativeSave || null;
                 } else if (k === "license.txt") {
                     this.license = new TextDecoder().decode(decompressedData[k]);
                 }
@@ -1101,6 +1110,7 @@ class EmulatorJS {
             this.frontend.showCanvas();
             this.started = true;
             this.paused = false;
+            this.frontend.setSaveFileButtonsVisible(this.gameManager.supportsNativeSave());
             if (this.touch) {
                 this.frontend.showVirtualGamepad();
             } else if (this.defaultCoreOpts && this.defaultCoreOpts.supportsMouse) {

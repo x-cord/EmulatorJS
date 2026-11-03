@@ -84,8 +84,13 @@ class EJS_Frontend {
         this.handleResize();
     }
     hideSaveFileButtons() {
-        this.elements.bottomBar.saveSavFiles[0].style.display = "none";
-        this.elements.bottomBar.loadSavFiles[0].style.display = "none";
+        this.setSaveFileButtonsVisible(false);
+    }
+    setSaveFileButtonsVisible(visible) {
+        for (const name of ["saveSavFiles", "loadSavFiles"]) {
+            const enabled = visible && this.ejs.config.buttonOpts[name].visible !== false;
+            for (const button of this.elements.bottomBar[name]) button.style.display = enabled ? "" : "none";
+        }
     }
     hideDisksButton() {
         this.diskParent.style.display = "none";
@@ -794,10 +799,12 @@ class EJS_Frontend {
             });
         });
     }
-    selectFile() {
+    selectFile(accept) {
         return new Promise((resolve, reject) => {
             const file = this.ejs.createElement("input");
             file.type = "file";
+            if (accept) file.accept = accept;
+            this.ejs.addEventListener(file, "cancel", () => resolve(null));
             this.ejs.addEventListener(file, "change", (e) => {
                 resolve(e.target.files[0]);
             })
@@ -1019,6 +1026,7 @@ class EJS_Frontend {
                 })
             } else {
                 const file = await this.selectFile();
+                if (!file) return;
                 const state = new Uint8Array(await file.arrayBuffer());
                 this.ejs.gameManager.loadState(state);
             }
@@ -1037,39 +1045,40 @@ class EJS_Frontend {
         if (this.ejs.config.cacheConfig.enabled === false) cache.style.display = "none";
 
         let savUrl;
-
         const saveSavFiles = addButton(this.ejs.config.buttonOpts.saveSavFiles, async () => {
-            const file = await this.ejs.gameManager.getSaveFile();
-            const { screenshot, format } = await this.ejs.takeScreenshot(this.ejs.capture.photo.source, this.ejs.capture.photo.format, this.ejs.capture.photo.upscale);
-            const called = this.ejs.callEvent("saveSave", {
-                screenshot: screenshot,
-                format: format,
-                save: file
-            });
-            if (called > 0) return;
-            const blob = new Blob([file]);
-            savUrl = URL.createObjectURL(blob);
-            const a = this.ejs.createElement("a");
-            a.href = savUrl;
-            a.download = this.ejs.gameManager.getSaveFilePath().split("/").pop();
-            a.click();
+            if (this.nativeSaveButtonsBusy) return;
+            this.nativeSaveButtonsBusy = true;
+            try {
+                const data = await this.ejs.gameManager.exportSaveData();
+                const { screenshot, format } = await this.ejs.takeScreenshot(this.ejs.capture.photo.source, this.ejs.capture.photo.format, this.ejs.capture.photo.upscale);
+                const called = this.ejs.callEvent("saveSave", { screenshot, format, ...data });
+                if (called > 0) return;
+                if (savUrl) URL.revokeObjectURL(savUrl);
+                savUrl = URL.createObjectURL(new Blob([data.save], { type: data.type }));
+                const a = this.ejs.createElement("a");
+                a.href = savUrl;
+                a.download = data.filename;
+                a.click();
+                const url = savUrl;
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch (error) {
+                this.displayMessage(error?.code === "empty" ? "NO SAVE DATA AVAILABLE" : "FAILED TO SAVE DATA", undefined, undefined, "error");
+            } finally { this.nativeSaveButtonsBusy = false; }
         });
         const loadSavFiles = addButton(this.ejs.config.buttonOpts.loadSavFiles, async () => {
+            if (this.nativeSaveButtonsBusy) return;
             const called = this.ejs.callEvent("loadSave");
             if (called > 0) return;
-            const file = await this.selectFile();
-            const sav = new Uint8Array(await file.arrayBuffer());
-            const path = this.ejs.gameManager.getSaveFilePath();
-            const paths = path.split("/");
-            let cp = "";
-            for (let i = 0; i < paths.length - 1; i++) {
-                if (paths[i] === "") continue;
-                cp += "/" + paths[i];
-                if (!this.ejs.gameManager.FS.analyzePath(cp).exists) this.ejs.gameManager.FS.mkdir(cp);
-            }
-            if (this.ejs.gameManager.FS.analyzePath(path).exists) this.ejs.gameManager.FS.unlink(path);
-            this.ejs.gameManager.FS.writeFile(path, sav);
-            this.ejs.gameManager.loadSaveFiles();
+            this.nativeSaveButtonsBusy = true;
+            try {
+                const profile = this.ejs.gameManager.nativeSave.descriptor;
+                const file = await this.selectFile(profile?.type === "directory" ? ".zip" : undefined);
+                if (!file) return;
+                await this.ejs.gameManager.importSaveData(file);
+                this.displayMessage("LOADED SAVE DATA", undefined, undefined, "success");
+            } catch (error) {
+                this.displayMessage("FAILED TO LOAD SAVE DATA", undefined, undefined, "error");
+            } finally { this.nativeSaveButtonsBusy = false; }
         });
         const netplay = addButton(this.ejs.config.buttonOpts.netplay, async () => {
             if (!this.ejs.netplay) return;
