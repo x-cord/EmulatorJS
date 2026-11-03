@@ -858,17 +858,22 @@ class EJS_Frontend {
         return first.compareDocumentPosition && first.compareDocumentPosition(second) & 16;
     }
     dockMenu() {
-        if (this.dockedMenu) return;
-        this.dockedMenu = true;
-        this.elements.parent.classList.add("ejs_docked_menu");
-        this.createBottomMenuBarListeners();
-        this.elements.menu.classList.remove("ejs_menu_bar_hidden");
+        this.dockMenuRequested = true;
+        this.updateDockedMenu();
         this.elements.menu.setAttribute("role", "toolbar");
         for (const button of this.elements.menu.querySelectorAll("button")) {
             const label = button.querySelector(".ejs_menu_text")?.textContent;
             if (label) button.setAttribute("aria-label", label);
         }
-
+    }
+    updateDockedMenu() {
+        if (!this.dockMenuRequested) return;
+        const docked = !this.ejs.isMobile && !matchMedia("(pointer: coarse), (width < 640px)").matches;
+        if (this.dockedMenu === docked) return;
+        this.dockedMenu = docked;
+        this.elements.parent.classList.toggle("ejs_docked_menu", docked);
+        this.createBottomMenuBarListeners();
+        this.elements.menu.classList.toggle("ejs_menu_bar_hidden", !docked);
     }
     createBottomMenuBar() {
         this.elements.menu = this.ejs.createElement("div");
@@ -961,8 +966,7 @@ class EJS_Frontend {
             if (this.dockedMenu) return;
             if (this.isChild(this.elements.menu, e.target) || this.isChild(this.elements.menuToggle, e.target)) return;
             if (!this.ejs.started || this.elements.menu.classList.contains("ejs_menu_bar_hidden") || this.isPopupOpen()) return;
-            const width = this.elements.parent.getBoundingClientRect().width;
-            if (width > 575) return;
+            if (!this.game.parentElement.classList.contains("ejs_small_screen")) return;
             clearTimeout(tmout);
             tmout = setTimeout(() => {
                 ignoreEvents = false;
@@ -3069,6 +3073,7 @@ class EJS_Frontend {
         this.virtualGamepad.style.display = "none";
     }
     handleResize() {
+        this.updateDockedMenu();
         if (this.virtualGamepad) {
             if (this.virtualGamepad.style.display === "none") {
                 this.virtualGamepad.style.opacity = 0;
@@ -3080,9 +3085,9 @@ class EJS_Frontend {
             }
         }
         const positionInfo = this.elements.parent.getBoundingClientRect();
-        this.game.parentElement.classList.toggle("ejs_small_screen", positionInfo.width <= 575);
-        //This wouldnt work using :not()... strange.
-        this.game.parentElement.classList.toggle("ejs_big_screen", positionInfo.width > 575);
+        const mobileMenu = this.ejs.isMobile || matchMedia("(pointer: coarse)").matches || positionInfo.width <= 575;
+        this.game.parentElement.classList.toggle("ejs_small_screen", mobileMenu);
+        this.game.parentElement.classList.toggle("ejs_big_screen", !mobileMenu);
 
         if (!this.handleSettingsResize) return;
         this.handleSettingsResize();

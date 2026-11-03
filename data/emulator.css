@@ -1,4 +1,5 @@
 .ejs_parent {
+    --ejs-toolbar-height: 0px;
     background: #000;
     overflow: hidden;
     position: relative;
@@ -875,7 +876,7 @@
 .ejs_virtualGamepad_parent {
     width: 100%;
     position: absolute;
-    bottom: 50px;
+    bottom: var(--ejs-toolbar-height, 0px);
 }
 
 .ejs_virtualGamepad_top {
@@ -910,6 +911,7 @@
 }
 
 .ejs_virtualGamepad_button {
+    touch-action: none;
     position: absolute;
     font-size: 20px;
     width: 50px;
@@ -1778,7 +1780,7 @@
     top: 5px;
     right: 5px;
     opacity: .5;
-    z-index: 999;
+    z-index: 9999;
     cursor: pointer;
 }
 
