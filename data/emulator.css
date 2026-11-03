@@ -229,8 +229,10 @@
 }
 
 .ejs_canvas_parent {
+    position: relative;
     width: 100%;
     height: 100%;
+    container-type: size;
 }
 
 .netplay-hidden {
@@ -2065,6 +2067,8 @@
     object-fit: contain;
     image-rendering: pixelated;
     background: #fff;
+    -webkit-user-drag: none;
+    user-drag: none;
 }
 .ejs_print_actions {
     display: flex;
@@ -2079,4 +2083,85 @@
 }
 .ejs_print_actions .ejs_button_button:hover {
     transform: none;
+}
+
+/* Super TV-PC live thermal printer feed */
+.ejs_printer_feed_container {
+    position: absolute;
+    bottom: max(0px, calc((100cqh - 100cqw * 3 / 4) / 2));
+    right: max(16px, calc((100cqw - 100cqh * 4 / 3) / 2 + 16px));
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 192px;
+    pointer-events: none;
+    filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.4)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+    animation: ejs_printer_slide_in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ejs_printer_slide_in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.ejs_printer_feed_container.ejs_printer_done {
+    animation: ejs_printer_detach 0.55s forwards;
+}
+
+@keyframes ejs_printer_detach {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+        animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    35% {
+        opacity: 1;
+        transform: translateY(-12px);
+        animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-28px);
+    }
+}
+
+.ejs_printer_paper {
+    width: 192px;
+    background: #ffffff;
+    border-top: 1px solid #d4d4d8;
+    border-left: 1px solid #d4d4d8;
+    border-right: 1px solid #d4d4d8;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
+    transition: height 0.05s linear;
+}
+
+.ejs_printer_paper_canvas {
+    width: 192px;
+    height: 144px;
+    display: block;
+    image-rendering: auto;
+    background: #ffffff;
+}
+
+.ejs_printer_paper_tear {
+    display: none;
+    width: 192px;
+    height: 5px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 4' width='6' height='4'%3E%3Cpath d='M0,0 L3,3.5 L6,0 Z' fill='%23ffffff'/%3E%3Cpath d='M0,0 L3,3.5 L6,0' fill='none' stroke='%23d4d4d8' stroke-width='1' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-size: 6px 4px;
+    background-repeat: repeat-x;
+    margin-top: -1px;
+}
+
+.ejs_printer_feed_container.ejs_printer_cut .ejs_printer_paper_tear {
+    display: block;
 }
